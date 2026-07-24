@@ -420,6 +420,9 @@ function renderAlbums() {
                         + Upload
                     </button>
 
+                    <button class="btn btn-outline btn-sm delete-album" style="color:var(--color-danger); border-color:var(--color-danger);">
+                        Delete
+                    </button>
                 </div>
 
             </div>
@@ -469,6 +472,22 @@ function renderAlbums() {
 
         });
 
+    });
+
+        document.querySelectorAll(".delete-album").forEach(btn => {
+        btn.addEventListener("click", async e => {
+            const id = e.target.closest(".album-card").dataset.id;
+            if (!confirm("Are you sure you want to delete this entire album?")) return;
+            try {
+                const response = await fetch(`${GALLERY_API}/${id}`, { method: "DELETE" });
+                if (!response.ok) throw new Error("Failed to delete album");
+                showToast("Album deleted");
+                fetchGallery();
+            } catch (err) {
+                console.error(err);
+                showToast("Error deleting album");
+            }
+        });
     });
 
 }
@@ -931,12 +950,16 @@ function openAlbumModal(existing) {
         )}
 
         <div class="form-group">
-            <label>Cover Image URL (optional)</label>
+            <label>Cover Image (Upload)</label>
+            ${existing && existing.coverImage ? 
+                `<div style="margin-bottom:8px;">
+                <img src="${existing.coverImage}" style="max-width:100px; border-radius:4px;">
+                </div>` : ""}
             <input
-                type="text"
+                type="file"
                 class="form-input"
-                id="a_cover"
-                value="${existing ? (existing.coverImage || "") : ""}"
+                id="a_cover_file"
+                accept="image/*"
             >
         </div>
         `,
@@ -947,8 +970,17 @@ function openAlbumModal(existing) {
                 document.getElementById("a_name").value.trim() ||
                 "Untitled Album";
 
-            const coverImage =
-                document.getElementById("a_cover").value.trim();
+                     let coverImage = existing ? existing.coverImage : "";
+            const fileInput = document.getElementById("a_cover_file");
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                coverImage = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = e => reject(e);
+                    reader.readAsDataURL(file);
+                });
+            }
 
             try {
 

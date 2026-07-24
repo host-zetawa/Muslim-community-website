@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch('http://localhost:3000/api/gallery');
+              const response = await fetch('https://muslim-community.onrender.com/api/gallery');
             if (!response.ok) throw new Error('Failed to fetch gallery');
             const items = await response.json();
             
@@ -247,13 +247,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     : '';
 
                 galleryContainer.innerHTML += `
-                    <div class="media-card ${isVideo ? 'video-card' : ''}" data-type="${item.type || 'photo'}" data-src="${item.imageUrl || ''}" role="button" tabindex="0">
-                        <img src="${item.imageUrl || 'assets/hero_bg.png'}" alt="${item.title}" class="media-card-img" loading="lazy">
+                 <div class="media-card ${isVideo ? 'video-card' : ''}" data-type="${item.type || 'photo'}" data-src="${item.coverImage || ''}" role="button" tabindex="0">
+                        <img src="${item.coverImage || 'assets/hero_bg.png'}" alt="${item.title}" class="media-card-img" loading="lazy">
                         ${playIndicator}
                         <div class="media-overlay">
                             <div class="media-icon">${iconSvg}</div>
                             <div class="media-card-title">${item.title}</div>
-                            <div class="media-card-desc">${item.description || ''}</div>
+                                                       <div class="media-card-desc">${item.photos ? item.photos.length + ' photos' : ''}</div>
                         </div>
                     </div>
                 `;
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------
     const fetchDonationDetails = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/settings/donation');
+            const response = await fetch('https://muslim-community.onrender.com/api/settings/donation');
             if (!response.ok) throw new Error('Failed to fetch donation details');
             const data = await response.json();
 
