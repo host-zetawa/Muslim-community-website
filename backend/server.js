@@ -16,7 +16,7 @@ const Member = require("./models/members");
 const Gallery = require("./models/gallery");
 const Admin = require("./models/Admin");
 const Donation = require("./models/donation");
-const Settings = require("./AdminPanel/models/Settings");
+const Settings = require("./models/Settings");
 
 const JWT_SECRET = process.env.JWT_SECRET || "muslim_community_super_secret_key_2026";
 console.log(JWT_SECRET);
