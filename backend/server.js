@@ -248,11 +248,24 @@ app.get("/api/members", async (req, res) => {
 // Create a member
 app.post("/api/members", async (req, res) => {
     try {
+
+        console.log(req.body);
+
         const member = new Member(req.body);
+
         await member.save();
+
         res.status(201).json(member);
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+
+        console.error(error);
+
+        res.status(500).json({
+            message: error.message,
+            stack: error.stack
+        });
+
     }
 });
 

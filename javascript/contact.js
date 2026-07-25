@@ -44,153 +44,86 @@ document.querySelectorAll('a[href^="#"]').forEach(link=>{
     });
 
 });
-const members = {
+let members = {};
+let admins = {};
 
-    ahmad:{
-        initials:"AR",
-        color:"red",
-        name:"Ahmad Raza Khan",
-        role:"Community Member",
-        message:"Helping people through compassion and unity is my greatest motivation.",
-        about:"I actively participate in food drives and community welfare programs.",
-        responsibilities:[
-            "Food Distribution",
-            "Mosque Care",
-            "Volunteer Support",
-            "Community Events"
-        ],
-        phone:"+92 300 123 4567",
-        email:"ahmad.khan@community.org",
-        date:" 24-05-2025"
-    },
+const API_BASE = "https://muslim-community.onrender.com/api";
 
-    fatima:{
-        initials:"FZ",
-        color:"blue",
-        name:"Fatima Zahra",
-        role:"Community Member",
-        message:"Together we can create a better future for every family.",
-        about:"I organize educational workshops and women's welfare activities.",
-        responsibilities:[
-            "Education",
-            "Counselling",
-            "Volunteer Training",
-            "Event Planning"
-        ],
-        phone:"+92 321 987 6543",
-        email:"fatima.zahra@community.org",
-        date:"26-08-2024"
-    },
+async function fetchMembers() {
+    const response = await fetch(`${API_BASE}/members`);
+    const data = await response.json();
 
-    usman:{
-        initials:"MU",
-        color:"orange",
-        name:"Muhammad Usman",
-        role:"Community Member",
-        message:"Serving the community is both a responsibility and an honor.",
-        about:"I coordinate youth programs and sports activities for community members.",
-        responsibilities:[
-            "Youth Programs",
-            "Sports Events",
-            "Community Help",
-            "Volunteer Team"
-        ],
-        phone:"+92 333 456 7890",
-        email:"muhammad.usman@community.org",
-        date:"19-03-2022"
-    },
+    console.log("Members:", data);
 
-    khadija:{
-        initials:"KB",
-        color:"pink",
-        name:"Khadija Bibi",
-        role:"Community Member",
-        message:"Small acts of kindness can inspire lasting change.",
-        about:"I support women empowerment initiatives and social welfare campaigns.",
-        responsibilities:[
-            "Women's Welfare",
-            "Family Support",
-            "Community Outreach",
-            "Food Drive"
-        ],
-        phone:"+92 301 654 7891",
-        email:"khadija.bibi@community.org",
-        date:"09-11-2021"
-    },
+    const grid = document.getElementById("members-grid");
+    console.log("Grid:", grid);
 
-    ibrahim:{
-        initials:"IS",
-        color:"green",
-        name:"Ibrahim Siddiqui",
-        role:"Community Member",
-        message:"Strong communities are built through teamwork and dedication.",
-        about:"I help organize charity events and volunteer management.",
-        responsibilities:[
-            "Volunteer Team",
-            "Charity Events",
-            "Youth Guidance",
-            "Mosque Support"
-        ],
-        phone:"+92 312 444 5566",
-        email:"ibrahim.s@community.org",
-        date:"03-12-2017"
-    },
+    grid.innerHTML = "<h2 style='color:red'>TEST</h2>";
 
-    abdul:{
-        initials:"AR",
-        color:"purple",
-        name:"Abdul Rahman",
-        role:"Community Member",
-        message:"Faith and service together strengthen our community.",
-        about:"I assist in planning community gatherings and welfare projects.",
-        responsibilities:[
-            "Event Planning",
-            "Community Meetings",
-            "Volunteer Support",
-            "Mosque Activities"
-        ],
-        phone:"+92 322 888 7766",
-        email:"abdulrahman@community.org",
-        date:"22-08-2022"
-    },
+    data.forEach(member => {
+ grid.innerHTML += `
+<div class="abc123">
+    <h2>${member.fullName}</h2>
+    <p>${member.role}</p>
+</div>
+`;
+    });
+}
 
-    zainab:{
-        initials:"ZM",
-        color:"deep-orange",
-        name:"Zainab Malik",
-        role:"Community Member",
-        message:"Every volunteer has the power to make a difference.",
-        about:"I coordinate educational campaigns and family support programs.",
-        responsibilities:[
-            "Education",
-            "Family Support",
-            "Volunteer Training",
-            "Community Service"
-        ],
-        phone:"+92 301 222 3344",
-        email:"zainab.malik@community.org",
-        date:"21-05-2026 "
-    },
+async function fetchAdmins() {
 
-    maryam:{
-        initials:"MN",
-        color:"cyan",
-        name:"Maryam Noor",
-        role:"Community Member",
-        message:"Unity, respect, and compassion guide every community activity.",
-        about:"I work with youth volunteers and community awareness programs.",
-        responsibilities:[
-            "Awareness Programs",
-            "Youth Volunteers",
-            "Charity Support",
-            "Community Outreach"
-        ],
-        phone:"+92 315 666 5544",
-        email:"maryam.noor@community.org",
-        date:"19-10-2021 "
+    try {
+
+        const response = await fetch(`${API_BASE}/admin`);
+
+        if (!response.ok) throw new Error("Failed to fetch admins");
+
+        const data = await response.json();
+
+        admins = {};
+
+        const grid = document.getElementById("admin-grid");
+
+        grid.innerHTML = "";
+
+        data.forEach(admin => {
+
+            admins[admin._id] = admin;
+
+            grid.innerHTML += `
+                <div class="member-card">
+
+                    <div class="member-photo admin-avatar">
+                        ${admin.name.charAt(0).toUpperCase()}
+                    </div>
+
+                    <h3>${admin.name}</h3>
+
+                    <p>${admin.role}</p>
+
+                    <button
+                        class="profile-btn"
+                        data-id="${admin._id}"
+                        data-type="admin"
+                    >
+                        View Profile
+                    </button>
+
+                </div>
+            `;
+
+        });
+
+        attachProfileEvents();
+
+    } catch (err) {
+
+        console.error(err);
+
     }
 
-};
+}
+
 const overlay = document.getElementById("popupOverlay");
 
 const avatar = document.getElementById("popupAvatar");
@@ -210,43 +143,51 @@ const phone = document.getElementById("popupPhone");
 const email = document.getElementById("popupEmail");
 
 const date = document.getElementById("popupdate");
-document.querySelectorAll(".profile-btn").forEach(button=>{
+function attachProfileEvents() {
 
-    button.addEventListener("click",()=>{
+    document.querySelectorAll(".profile-btn").forEach(button => {
 
-        const id = button.dataset.member;
+        button.onclick = () => {
 
-        const member = members[id];
+            const type = button.dataset.type;
+            const id = button.dataset.id;
 
-        initials.textContent = member.initials;
+            const person = type === "admin"
+                ? admins[id]
+                : members[id];
 
-        avatar.className = "popup-avatar " + member.color;
+            if (!person) return;
 
-        nameText.textContent = member.name;
+            initials.textContent = person.name
+                ? person.name.split(" ").map(x => x[0]).join("").substring(0,2)
+                : person.fullName.split(" ").map(x => x[0]).join("").substring(0,2);
 
-        message.textContent = member.message;
+            nameText.textContent = person.name || person.fullName;
 
-        about.textContent = member.about;
+            message.textContent = "";
 
-        phone.textContent = member.phone;
+            about.textContent = "";
 
-        email.textContent = member.email;
+            phone.textContent = person.phone || "—";
 
-        date.textContent = member.date;
+            email.textContent = person.email || "—";
 
-        responsibilities.innerHTML="";
+            date.textContent =
+                person.joining ||
+                person.dateOfJoining ||
+                person.createdAt ||
+                "";
 
-        member.responsibilities.forEach(item=>{
+            responsibilities.innerHTML = "";
 
-            responsibilities.innerHTML+=`<span>${item}</span>`;
+            overlay.classList.add("active");
 
-        });
-
-        overlay.classList.add("active");
+        };
 
     });
 
-});
+}
+
 document.getElementById("popupButton").onclick=()=>{
 
     overlay.classList.remove("active");
@@ -266,5 +207,13 @@ overlay.addEventListener("click",(e)=>{
         overlay.classList.remove("active");
 
     }
+
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    await fetchAdmins();
+
+    await fetchMembers();
 
 });
