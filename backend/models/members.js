@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const memberSchema = new mongoose.Schema({
-    name: {
+    fullName: {
         type: String,
         required: true,
         trim: true
@@ -24,9 +24,13 @@ const memberSchema = new mongoose.Schema({
         lowercase: true
     },
 
-    joining: {
+    dateOfJoining: {
         type: Date,
         required: true
+    },
+    photo: {
+        type: String,
+        default: ""
     }
 });
 

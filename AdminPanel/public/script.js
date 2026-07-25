@@ -187,8 +187,9 @@ function renderExecMembers() {
            <td class="cell-title">
                 <div class="member-info">
                     <img
-                        src="${member.photo || 'assets/default-avatar.png'}"
-                        class="member-avatar">
+                        src="${member.photo || 'images/default-avatar.png'}"
+                        class="member-avatar"
+                        alt="${member.fullName ||member.name}">
 
                     <span>
                         ${member.fullName || member.name} — ${member.role}
@@ -200,7 +201,7 @@ function renderExecMembers() {
 
             <td>${member.email}</td>
 
-            <td>${formatSince(member.dateOfJoining ||member.joining)}</td>
+            <td>${formatSince(member.dateOfJoining || member.joining)}</td>
 
             <td class="row-actions">
                 <button class="btn btn-outline btn-sm edit-exec">
