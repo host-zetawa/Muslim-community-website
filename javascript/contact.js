@@ -61,7 +61,7 @@ const members = {
         ],
         phone:"+92 300 123 4567",
         email:"ahmad.khan@community.org",
-        address:"15-B, Green Town, Lahore"
+        date:" 24-05-2025"
     },
 
     fatima:{
@@ -79,7 +79,7 @@ const members = {
         ],
         phone:"+92 321 987 6543",
         email:"fatima.zahra@community.org",
-        address:"Gulshan-e-Iqbal, Karachi"
+        date:"26-08-2024"
     },
 
     usman:{
@@ -97,7 +97,7 @@ const members = {
         ],
         phone:"+92 333 456 7890",
         email:"muhammad.usman@community.org",
-        address:"Model Town, Lahore"
+        date:"19-03-2022"
     },
 
     khadija:{
@@ -115,7 +115,7 @@ const members = {
         ],
         phone:"+92 301 654 7891",
         email:"khadija.bibi@community.org",
-        address:"F-10, Islamabad"
+        date:"09-11-2021"
     },
 
     ibrahim:{
@@ -133,7 +133,7 @@ const members = {
         ],
         phone:"+92 312 444 5566",
         email:"ibrahim.s@community.org",
-        address:"Johar Town, Lahore"
+        date:"03-12-2017"
     },
 
     abdul:{
@@ -151,7 +151,7 @@ const members = {
         ],
         phone:"+92 322 888 7766",
         email:"abdulrahman@community.org",
-        address:"DHA Phase 5, Karachi"
+        date:"22-08-2022"
     },
 
     zainab:{
@@ -169,7 +169,7 @@ const members = {
         ],
         phone:"+92 301 222 3344",
         email:"zainab.malik@community.org",
-        address:"Satellite Town, Rawalpindi"
+        date:"21-05-2026 "
     },
 
     maryam:{
@@ -187,7 +187,7 @@ const members = {
         ],
         phone:"+92 315 666 5544",
         email:"maryam.noor@community.org",
-        address:"Hayatabad, Peshawar"
+        date:"19-10-2021 "
     }
 
 };
@@ -209,7 +209,7 @@ const phone = document.getElementById("popupPhone");
 
 const email = document.getElementById("popupEmail");
 
-const address = document.getElementById("popupAddress");
+const date = document.getElementById("popupdate");
 document.querySelectorAll(".profile-btn").forEach(button=>{
 
     button.addEventListener("click",()=>{
@@ -232,7 +232,7 @@ document.querySelectorAll(".profile-btn").forEach(button=>{
 
         email.textContent = member.email;
 
-        address.textContent = member.address;
+        date.textContent = member.date;
 
         responsibilities.innerHTML="";
 
