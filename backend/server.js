@@ -29,10 +29,10 @@ const PORT = 3000;
 
 app.use(express.urlencoded({ extended: true }));
 
-// // Connect MongoDB
-// mongoose.connect(process.env.MONGO_URI)
-// .then(() => console.log("Connected to Atlas"))
-// .catch(err => console.log(err));
+// Connect MongoDB
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log("Connected to Atlas"))
+.catch(err => console.log(err));
 
 // Home Route
 app.get("/", (req, res) => {
