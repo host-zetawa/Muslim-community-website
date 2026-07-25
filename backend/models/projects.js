@@ -23,10 +23,6 @@ const projectSchema = new mongoose.Schema({
     },
 
 
-    icon: {
-        type: String,
-        default: "🏢"
-    },
 
     createdAt: {
         type: Date,
