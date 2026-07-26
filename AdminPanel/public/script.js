@@ -49,7 +49,7 @@ let projects = [];
 const API_URL = "https://muslim-community.onrender.com/api/projects";
 const MEMBER_API = "https://muslim-community.onrender.com/api/members";
 const GALLERY_API = "https://muslim-community.onrender.com/api/gallery";
-const DONATION_API = "https://muslim-community.onrender.com/api/settings/donation";
+const DONATION_API = "https://muslim-community.onrender.com/api/donations";
 const NOTICE_API = "https://muslim-community.onrender.com/api/notices";
 const ADMIN_API = "https://muslim-community.onrender.com/api/admin";
 
@@ -187,12 +187,11 @@ function renderExecMembers() {
            <td class="cell-title">
                 <div class="member-info">
                     <img
-                        src="${member.photo || 'images/default-avatar.png'}"
-                        class="member-avatar"
-                        alt="${member.fullName ||member.name}">
+                        src="${member.photo || 'assets/default-avatar.png'}"
+                        class="member-avatar">
 
                     <span>
-                        ${member.fullName || member.name} — ${member.role}
+                        ${member.fullName} — ${member.role}
                     </span>
                 </div>
             </td>
@@ -201,7 +200,7 @@ function renderExecMembers() {
 
             <td>${member.email}</td>
 
-            <td>${formatSince(member.dateOfJoining || member.joining)}</td>
+            <td>${formatSince(member.dateOfJoining)}</td>
 
             <td class="row-actions">
                 <button class="btn btn-outline btn-sm edit-exec">
@@ -247,7 +246,7 @@ function renderExecMembers() {
 
             confirmAction(
 
-                `Remove ${member.name} from executive members?`,
+                `Remove ${member.fullName} from executive members?`,
 
                 async () => {
 
@@ -315,7 +314,7 @@ function renderGeneralMembers(filter = '') {
         btn.addEventListener('click', e => {
             const id = Number(e.target.closest('tr').dataset.id);
             const member = generalMembers.find(m => m.id === id);
-            confirmAction(`Remove ${member ? member.name : 'this member'}?`, () => {
+            confirmAction(`Remove ${member ? fullName : 'this member'}?`, () => {
                 generalMembers = generalMembers.filter(m => m.id !== id);
                 renderGeneralMembers(document.getElementById('memberSearch').value);
                 showToast('Member removed');
@@ -421,9 +420,6 @@ function renderAlbums() {
                         + Upload
                     </button>
 
-                    <button class="btn btn-outline btn-sm delete-album" style="color:var(--color-danger); border-color:var(--color-danger);">
-                        Delete
-                    </button>
                 </div>
 
             </div>
@@ -473,22 +469,6 @@ function renderAlbums() {
 
         });
 
-    });
-
-        document.querySelectorAll(".delete-album").forEach(btn => {
-        btn.addEventListener("click", async e => {
-            const id = e.target.closest(".album-card").dataset.id;
-            if (!confirm("Are you sure you want to delete this entire album?")) return;
-            try {
-                const response = await fetch(`${GALLERY_API}/${id}`, { method: "DELETE" });
-                if (!response.ok) throw new Error("Failed to delete album");
-                showToast("Album deleted");
-                fetchGallery();
-            } catch (err) {
-                console.error(err);
-                showToast("Error deleting album");
-            }
-        });
     });
 
 }
@@ -706,132 +686,95 @@ function openMemberModal(existing, kind) {
 
         async () => {
 
-            const name = document.getElementById("m_name").value.trim() || "Unnamed member";
-            const role = document.getElementById("m_role").value.trim();
-            const phone = document.getElementById("m_phone").value.trim() || "—";
-            const joining = document.getElementById("m_joining").value || todayIso;
-            const photoInput = document.getElementById("m_photo");
+    const fullName = document.getElementById("m_name").value.trim() || "Unnamed member";
+    const role = document.getElementById("m_role").value.trim();
+    const phone = document.getElementById("m_phone").value.trim() || "—";
+    const dateOfJoining = document.getElementById("m_joining").value || todayIso;
 
-            let photo = existing?.photo || "";
+    const emailField = document.getElementById("m_email");
+    const email = emailField
+        ? emailField.value.trim() || "—"
+        : (existing?.email || "—");
 
-            if (photoInput.files.length) {
-                photo = URL.createObjectURL(photoInput.files[0]);
-            }
-            const emailField = document.getElementById("m_email");
+    const photoInput = document.getElementById("m_photo");
 
-            const email = emailField
-                ? emailField.value.trim() || "—"
-                : existing
-                    ? existing.email
-                    : "—";
+    let photo = existing?.photo || "";
 
+    if (photoInput.files.length > 0) {
 
+        const file = photoInput.files[0];
 
-            // ===========================
-            // EXECUTIVE MEMBERS (DATABASE)
-            // ===========================
+        photo = await new Promise((resolve, reject) => {
 
-            if (kind === "exec" || role) {
+            const reader = new FileReader();
 
-                try {
+            reader.onload = e => resolve(e.target.result);
 
-                    if (isEdit) {
+            reader.onerror = reject;
 
-                        await fetch(`${MEMBER_API}/${existing._id}`, {
+            reader.readAsDataURL(file);
 
-                            method: "PUT",
+        });
 
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
+    }
 
-                            body: JSON.stringify({
-                                name,
-                                role,
-                                phone,
-                                email,
-                                joining,
-                                photo
-                            })
+    const payload = {
+        fullName,
+        role,
+        phone,
+        email,
+        dateOfJoining,
+        photo
+    };
 
-                        });
+    console.log("Sending:", payload);
 
-                        showToast("Member updated");
+    try {
 
-                    } else {
+        let response;
 
-                        await fetch(MEMBER_API, {
+        if (isEdit) {
 
-                            method: "POST",
+            response = await fetch(`${MEMBER_API}/${existing._id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
 
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
+        } else {
 
-                            body: JSON.stringify({
-                                name,
-                                role,
-                                phone,
-                                email,
-                                joining,
-                                photo
-                            })
-
-                        });
-
-                        showToast("Member added");
-
-                    }
-
-                    fetchMembers();
-
-                }
-                catch (err) {
-
-                    console.error(err);
-
-                }
-
-            }
-
-            // ===========================
-            // GENERAL MEMBERS (LOCAL)
-            // ===========================
-
-            else {
-
-                if (isEdit) {
-
-                    Object.assign(existing, {
-                        name,
-                        phone,
-                        joining,
-                        photo
-                    });
-
-                    renderGeneralMembers(document.getElementById("memberSearch").value);
-
-                    showToast("Member updated");
-
-                } else {
-
-                    generalMembers.push({
-                        id: uid(generalMembers),
-                        name,
-                        phone,
-                        joining,
-                        photo
-                    });
-
-                    renderGeneralMembers();
-
-                    showToast("Member added");
-
-                }
-
-            }
+            response = await fetch(MEMBER_API, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
 
         }
+
+        const result = await response.json();
+
+        console.log(result);
+
+        if (!response.ok) {
+            alert(result.message || "Failed to save member");
+            return;
+        }
+
+        showToast(isEdit ? "Member updated" : "Member added");
+
+        fetchMembers();
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
+}
 
     );
 
@@ -951,16 +894,12 @@ function openAlbumModal(existing) {
         )}
 
         <div class="form-group">
-            <label>Cover Image (Upload)</label>
-            ${existing && existing.coverImage ? 
-                `<div style="margin-bottom:8px;">
-                <img src="${existing.coverImage}" style="max-width:100px; border-radius:4px;">
-                </div>` : ""}
+            <label>Cover Image URL (optional)</label>
             <input
-                type="file"
+                type="text"
                 class="form-input"
-                id="a_cover_file"
-                accept="image/*"
+                id="a_cover"
+                value="${existing ? (existing.coverImage || "") : ""}"
             >
         </div>
         `,
@@ -971,17 +910,8 @@ function openAlbumModal(existing) {
                 document.getElementById("a_name").value.trim() ||
                 "Untitled Album";
 
-                     let coverImage = existing ? existing.coverImage : "";
-            const fileInput = document.getElementById("a_cover_file");
-            if (fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                coverImage = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = e => resolve(e.target.result);
-                    reader.onerror = e => reject(e);
-                    reader.readAsDataURL(file);
-                });
-            }
+            const coverImage =
+                document.getElementById("a_cover").value.trim();
 
             try {
 
@@ -1336,85 +1266,170 @@ function donationRow(label, value, fullRow) {
 }
  
 function renderDonationSummary() {
+
     const qrBox = document.getElementById("donationSummaryQr");
-    if (qrBox) {
-        qrBox.innerHTML = donationDetails.qrCodeUrl
-            ? `<img src="${donationDetails.qrCodeUrl}" alt="Donation QR">`
-            : "";
-    }
 
-    const listEl = document.getElementById("donationSummaryList");
-    if (listEl) {
-        listEl.innerHTML = [
-            donationRow("Account Name", donationDetails.accountName),
-            donationRow("Account Number", donationDetails.accountNumber),
-            donationRow("IFSC Code", donationDetails.ifscCode),
-            donationRow("QR Code URL", donationDetails.qrCodeUrl)
-        ].join("");
-    }
+    qrBox.innerHTML = donationDetails.qrImage
+        ? `<img src="${donationDetails.qrImage}" alt="Donation QR">`
+        : "";
+
+    document.getElementById("donationSummaryList").innerHTML = [
+
+        donationRow("UPI ID", donationDetails.upiId),
+
+        donationRow("Mobile number", donationDetails.mobileNumber),
+
+        donationRow("Account name", donationDetails.accountName),
+
+        donationRow("Account number", donationDetails.accountNumber),
+
+        donationRow("IFSC", donationDetails.ifsc)
+
+    ].join("");
+
 }
-
 function openDonationModal() {
-    const accName = document.getElementById("accountName");
-    const accNum = document.getElementById("accountNumber");
-    const ifsc = document.getElementById("ifscCode");
-    const qrUrl = document.getElementById("qrCodeUrl");
 
-    if (accName) accName.value = donationDetails.accountName || "";
-    if (accNum) accNum.value = donationDetails.accountNumber || "";
-    if (ifsc) ifsc.value = donationDetails.ifscCode || "";
-    if (qrUrl) qrUrl.value = donationDetails.qrCodeUrl || "";
+    document.getElementById("upiId").value =
+        donationDetails.upiId || "";
 
-    document.getElementById("donationModalOverlay").classList.add("active");
+    document.getElementById("mobileNumber").value =
+        donationDetails.mobileNumber || "";
+
+    document.getElementById("accountName").value =
+        donationDetails.accountName || "";
+
+    document.getElementById("accountNumber").value =
+        donationDetails.accountNumber || "";
+
+    document.getElementById("ifscCode").value =
+        donationDetails.ifsc || "";
+
+    pendingQrUrl = donationDetails.qrImage || "";
+
+    const qrPreview = document.getElementById("qrPreviewLeft");
+
+    qrPreview.innerHTML = donationDetails.qrImage
+        ? `<img src="${donationDetails.qrImage}" alt="Donation QR">`
+        : "";
+
+    document
+        .getElementById("donationModalOverlay")
+        .classList.add("active");
+
 }
 
 function closeDonationModal() {
     document.getElementById('donationModalOverlay').classList.remove('active');
 }
 
-if (document.getElementById('editDonationBtn')) {
-    document.getElementById('editDonationBtn').addEventListener('click', openDonationModal);
-}
-if (document.getElementById('donationModalCloseBtn')) {
-    document.getElementById('donationModalCloseBtn').addEventListener('click', closeDonationModal);
-}
-if (document.getElementById('donationModalCancelBtn')) {
-    document.getElementById('donationModalCancelBtn').addEventListener('click', closeDonationModal);
-}
-if (document.getElementById('donationModalOverlay')) {
-    document.getElementById('donationModalOverlay').addEventListener('click', e => {
-        if (e.target.id === 'donationModalOverlay') closeDonationModal();
-    });
-}
+document.getElementById('editDonationBtn').addEventListener('click', openDonationModal);
+document.getElementById('donationModalCloseBtn').addEventListener('click', closeDonationModal);
+document.getElementById('donationModalCancelBtn').addEventListener('click', closeDonationModal);
+document.getElementById('donationModalOverlay').addEventListener('click', e => {
+    if (e.target.id === 'donationModalOverlay') closeDonationModal();
+});
 
-if (document.getElementById("saveDonationBtn")) {
-    document.getElementById("saveDonationBtn").addEventListener("click", async () => {
-        const data = {
-            accountName: document.getElementById("accountName").value.trim(),
-            accountNumber: document.getElementById("accountNumber").value.trim(),
-            ifscCode: document.getElementById("ifscCode").value.trim(),
-            qrCodeUrl: document.getElementById("qrCodeUrl").value.trim()
-        };
+document.getElementById('replaceQrBtnLeft').addEventListener('click', () => {
+    document.getElementById('qrFileInputLeft').click();
+});
+document.getElementById('qrFileInputLeft').addEventListener('change', e => {
+    if (!e.target.files.length) return;
+    pendingQrUrl = URL.createObjectURL(e.target.files[0]);
+    document.getElementById('qrPreviewLeft').innerHTML = `<img src="${pendingQrUrl}" alt="Donation QR code">`;
+});
 
-        try {
+document.getElementById("saveDonationBtn").addEventListener("click", async () => {
+
+    const data = {
+
+        qrImage: pendingQrUrl,
+
+        upiId: document.getElementById("upiId").value.trim(),
+
+        mobileNumber: document.getElementById("mobileNumber").value.trim(),
+
+        accountName: document.getElementById("accountName").value.trim(),
+
+        accountNumber: document.getElementById("accountNumber").value.trim(),
+
+        ifsc: document.getElementById("ifscCode").value.trim()
+
+    };
+
+    try {
+
+        // ===========================
+        // First time → Create document
+        // ===========================
+
+        if (!donationDetails._id) {
+
             const response = await fetch(DONATION_API, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
                 body: JSON.stringify(data)
+
             });
 
-            if (!response.ok) throw new Error("Failed to save donation details");
+            if (!response.ok) {
 
-            donationDetails = await response.json();
-            renderDonationSummary();
-            closeDonationModal();
-            showToast("Donation details saved successfully");
-        } catch (err) {
-            console.error(err);
-            showToast("Failed to save donation details");
+                throw new Error("Failed to create donation details");
+
+            }
+
         }
-    });
-}
+
+        // ===========================
+        // Already exists → Update
+        // ===========================
+
+        else {
+
+            const response = await fetch(`${DONATION_API}/${donationDetails._id}`, {
+
+                method: "PUT",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify(data)
+
+            });
+
+            if (!response.ok) {
+
+                throw new Error("Failed to update donation details");
+
+            }
+
+        }
+
+        await fetchDonation();
+
+        renderDonationSummary();
+
+        closeDonationModal();
+
+        showToast("Donation details saved");
+
+    }
+
+    catch (err) {
+
+        console.error(err);
+
+        showToast("Failed to save donation details");
+
+    }
+
+});
 
 /* ---------- Init ---------- */
 async function fetchProjects() {
