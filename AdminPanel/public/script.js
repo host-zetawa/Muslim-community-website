@@ -191,7 +191,7 @@ function renderExecMembers() {
                         class="member-avatar">
 
                     <span>
-                        ${member.fullName} — ${member.role}
+                        ${member.fullName || member.name} — ${member.role}
                     </span>
                 </div>
             </td>
@@ -200,7 +200,7 @@ function renderExecMembers() {
 
             <td>${member.email}</td>
 
-            <td>${formatSince(member.dateOfJoining)}</td>
+            <td>${formatSince(member.dateOfJoining ||member.joining)}</td>
 
             <td class="row-actions">
                 <button class="btn btn-outline btn-sm edit-exec">
@@ -246,7 +246,7 @@ function renderExecMembers() {
 
             confirmAction(
 
-                `Remove ${member.fullName} from executive members?`,
+                `Remove ${member.name} from executive members?`,
 
                 async () => {
 
@@ -314,7 +314,7 @@ function renderGeneralMembers(filter = '') {
         btn.addEventListener('click', e => {
             const id = Number(e.target.closest('tr').dataset.id);
             const member = generalMembers.find(m => m.id === id);
-            confirmAction(`Remove ${member ? fullName : 'this member'}?`, () => {
+            confirmAction(`Remove ${member ? member.name : 'this member'}?`, () => {
                 generalMembers = generalMembers.filter(m => m.id !== id);
                 renderGeneralMembers(document.getElementById('memberSearch').value);
                 showToast('Member removed');
@@ -686,95 +686,132 @@ function openMemberModal(existing, kind) {
 
         async () => {
 
-    const fullName = document.getElementById("m_name").value.trim() || "Unnamed member";
-    const role = document.getElementById("m_role").value.trim();
-    const phone = document.getElementById("m_phone").value.trim() || "—";
-    const dateOfJoining = document.getElementById("m_joining").value || todayIso;
+            const name = document.getElementById("m_name").value.trim() || "Unnamed member";
+            const role = document.getElementById("m_role").value.trim();
+            const phone = document.getElementById("m_phone").value.trim() || "—";
+            const joining = document.getElementById("m_joining").value || todayIso;
+            const photoInput = document.getElementById("m_photo");
 
-    const emailField = document.getElementById("m_email");
-    const email = emailField
-        ? emailField.value.trim() || "—"
-        : (existing?.email || "—");
+            let photo = existing?.photo || "";
 
-    const photoInput = document.getElementById("m_photo");
+            if (photoInput.files.length) {
+                photo = URL.createObjectURL(photoInput.files[0]);
+            }
+            const emailField = document.getElementById("m_email");
 
-    let photo = existing?.photo || "";
+            const email = emailField
+                ? emailField.value.trim() || "—"
+                : existing
+                    ? existing.email
+                    : "—";
 
-    if (photoInput.files.length > 0) {
 
-        const file = photoInput.files[0];
 
-        photo = await new Promise((resolve, reject) => {
+            // ===========================
+            // EXECUTIVE MEMBERS (DATABASE)
+            // ===========================
 
-            const reader = new FileReader();
+            if (kind === "exec" || role) {
 
-            reader.onload = e => resolve(e.target.result);
+                try {
 
-            reader.onerror = reject;
+                    if (isEdit) {
 
-            reader.readAsDataURL(file);
+                        await fetch(`${MEMBER_API}/${existing._id}`, {
 
-        });
+                            method: "PUT",
 
-    }
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
 
-    const payload = {
-        fullName,
-        role,
-        phone,
-        email,
-        dateOfJoining,
-        photo
-    };
+                            body: JSON.stringify({
+                                name,
+                                role,
+                                phone,
+                                email,
+                                joining,
+                                photo
+                            })
 
-    console.log("Sending:", payload);
+                        });
 
-    try {
+                        showToast("Member updated");
 
-        let response;
+                    } else {
 
-        if (isEdit) {
+                        await fetch(MEMBER_API, {
 
-            response = await fetch(`${MEMBER_API}/${existing._id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
+                            method: "POST",
 
-        } else {
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
 
-            response = await fetch(MEMBER_API, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
+                            body: JSON.stringify({
+                                name,
+                                role,
+                                phone,
+                                email,
+                                joining,
+                                photo
+                            })
+
+                        });
+
+                        showToast("Member added");
+
+                    }
+
+                    fetchMembers();
+
+                }
+                catch (err) {
+
+                    console.error(err);
+
+                }
+
+            }
+
+            // ===========================
+            // GENERAL MEMBERS (LOCAL)
+            // ===========================
+
+            else {
+
+                if (isEdit) {
+
+                    Object.assign(existing, {
+                        name,
+                        phone,
+                        joining,
+                        photo
+                    });
+
+                    renderGeneralMembers(document.getElementById("memberSearch").value);
+
+                    showToast("Member updated");
+
+                } else {
+
+                    generalMembers.push({
+                        id: uid(generalMembers),
+                        name,
+                        phone,
+                        joining,
+                        photo
+                    });
+
+                    renderGeneralMembers();
+
+                    showToast("Member added");
+
+                }
+
+            }
 
         }
-
-        const result = await response.json();
-
-        console.log(result);
-
-        if (!response.ok) {
-            alert(result.message || "Failed to save member");
-            return;
-        }
-
-        showToast(isEdit ? "Member updated" : "Member added");
-
-        fetchMembers();
-
-    } catch (err) {
-
-        console.error(err);
-
-    }
-
-}
 
     );
 
@@ -1330,14 +1367,7 @@ document.getElementById('donationModalOverlay').addEventListener('click', e => {
     if (e.target.id === 'donationModalOverlay') closeDonationModal();
 });
 
-document.getElementById('replaceQrBtnLeft').addEventListener('click', () => {
-    document.getElementById('qrFileInputLeft').click();
-});
-document.getElementById('qrFileInputLeft').addEventListener('change', e => {
-    if (!e.target.files.length) return;
-    pendingQrUrl = URL.createObjectURL(e.target.files[0]);
-    document.getElementById('qrPreviewLeft').innerHTML = `<img src="${pendingQrUrl}" alt="Donation QR code">`;
-});
+
 
 document.getElementById("saveDonationBtn").addEventListener("click", async () => {
 
@@ -1533,9 +1563,16 @@ async function fetchAdmins() {
 }
 
 fetchProjects();
+console.log("fetchMembers called");
 fetchMembers();
+console.log("fetchMembers called");
 renderGeneralMembers();
+console.log("fetchMembers called");
 fetchNotices();
+console.log("fetchMembers called");
 fetchGallery();
+console.log("fetchMembers called");
 fetchAdmins();
+console.log("fetchMembers called");
 fetchDonation();
+console.log("fetchMembers called");
