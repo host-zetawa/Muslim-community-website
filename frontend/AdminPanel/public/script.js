@@ -117,36 +117,41 @@ function statusClass(status) {
 }
 
 function renderProjects() {
-      console.log("renderProjects called");
+    console.log("renderProjects called");
     console.log(projects);
-    const rowsHtml = projects.map(p => `
+    const rowsHtml = projects.map(p => {
+        const safeProgress = Math.min(100, Math.max(0, Number(p.progress) || 0));
+        return `
         <tr data-id="${p._id}">
             <td class="cell-title">${p.title}</td>
             <td><span class="status-pill ${statusClass(p.status)}">${p.status}</span></td>
-            <td>${p.progress}%</td>
-            <td>${p.target}</td>
+            <td>${safeProgress}%</td>
+            <td>${p.target || 'TBD'}</td>
             <td class="row-actions">
                 <button class="btn btn-outline btn-sm edit-project">Edit</button>
                 <button class="btn btn-danger-outline btn-sm delete-project">Delete</button>
             </td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
     document.getElementById('projectsTableBody').innerHTML = rowsHtml;
-    const rowsHtml2 = projects.map(p => `
+
+    const rowsHtml2 = projects.map(p => {
+        const safeProgress = Math.min(100, Math.max(0, Number(p.progress) || 0));
+        return `
     <tr data-id="${p._id}">
         <td>${p.title}</td>
-        <td>${p.description}</td>
+        <td>${p.description || ''}</td>
         <td>${p.status}</td>
-        <td>${p.progress}%</td>
-        <td>${p.icon || "🏢"}</td>
-        <td>${new Date(p.createdAt).toLocaleDateString()}</td>
+        <td>${safeProgress}%</td>
+        <td>${p.createdAt ? new Date(p.createdAt).toLocaleDateString() : ''}</td>
         <td class="row-actions">
-    <button class="btn btn-outline btn-sm edit-project">Edit</button>
-    <button class="btn btn-danger-outline btn-sm delete-project">Delete</button>
-</td>
-    </tr>
-    `).join("");
+            <button class="btn btn-outline btn-sm edit-project">Edit</button>
+            <button class="btn btn-danger-outline btn-sm delete-project">Delete</button>
+        </td>
+    </tr>`;
+    }).join("");
 
-document.getElementById("projectsTableBody2").innerHTML = rowsHtml2;
+    document.getElementById("projectsTableBody2").innerHTML = rowsHtml2;
 
     document.querySelectorAll('.delete-project').forEach(btn => {
         btn.addEventListener('click', e => {
@@ -532,8 +537,9 @@ function openModal(title, bodyHtml, onSave) {
     modalBody.innerHTML = bodyHtml;
     modalOverlay.classList.add('active');
     modalSaveBtn.onclick = () => {
-        onSave();
-        closeModal();
+        if (onSave() !== false) {
+            closeModal();
+        }
     };
 }
 function closeModal() { modalOverlay.classList.remove('active'); }
@@ -595,15 +601,23 @@ console.log(existing);
             </select>
         </div>
 
-        ${fieldHtml('Progress %', 'f_progress', existing ? existing.progress : 0, 'number')}
+        <div class="form-group"><label>Progress %</label><input type="number" min="0" max="100" class="form-input" id="f_progress" value="${Math.min(100, Math.max(0, existing ? (existing.progress || 0) : 0))}"></div>
         ${fieldHtml('Target', 'f_target', existing ? existing.target : '')}
         `,
         () => {
-
             const title = document.getElementById("f_title").value.trim() || "Untitled project";
             const description = document.getElementById("f_description").value.trim();
             const status = document.getElementById("f_status").value;
-            const progress = Number(document.getElementById("f_progress").value) || 0;
+            const rawProgressVal = document.getElementById("f_progress").value;
+            const rawProgress = Number(rawProgressVal);
+
+            if (isNaN(rawProgress) || rawProgress > 100 || rawProgress < 0) {
+                alert("Progress percentage must be less than or equal to 100%");
+                showToast("Progress percentage cannot exceed 100%");
+                return false;
+            }
+
+            const progress = Math.min(100, Math.max(0, rawProgress));
             const target = document.getElementById("f_target").value.trim() || "TBD";
 
             if (isEdit) {
@@ -655,6 +669,17 @@ console.log(existing);
 
         }
     );
+
+    const fProgressInput = document.getElementById("f_progress");
+    if (fProgressInput) {
+        fProgressInput.addEventListener("input", function () {
+            if (Number(this.value) > 100) {
+                alert("Progress percentage cannot exceed 100%");
+                showToast("Progress percentage capped at 100%");
+                this.value = 100;
+            }
+        });
+    }
 }
 document.getElementById('addProjectBtnDash').addEventListener('click', () => openProjectModal(null));
 document.getElementById('addProjectBtn').addEventListener('click', () => openProjectModal(null));

@@ -190,7 +190,11 @@ app.post("/api/projects", async (req, res) => {
     console.log("Request Body:", req.body);
 
     try {
-        const project = new Project(req.body);
+        const payload = { ...req.body };
+        if (payload.progress !== undefined) {
+            payload.progress = Math.min(100, Math.max(0, Number(payload.progress) || 0));
+        }
+        const project = new Project(payload);
         await project.save();
         res.status(201).json(project);
     } catch (err) {
@@ -201,21 +205,26 @@ app.post("/api/projects", async (req, res) => {
 
 //Edit projects
 app.put("/api/projects/:id", async (req, res) => {
-      console.log("PUT Request");
+    console.log("PUT Request");
     console.log("ID:", req.params.id);
     console.log("Body:", req.body);
 
     try {
+        const payload = { ...req.body };
+        if (payload.progress !== undefined) {
+            payload.progress = Math.min(100, Math.max(0, Number(payload.progress) || 0));
+        }
         const updatedProject = await Project.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            payload,
             { new: true, runValidators: true }
         );
 
         res.json(updatedProject);
     } catch (err) {
         res.status(400).json({ error: err.message });
-    }});
+    }
+});
 // Delete Projects
 app.delete("/api/projects/:id", async (req, res) => {
      console.log("DELETE Request");

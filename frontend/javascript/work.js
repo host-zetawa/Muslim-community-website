@@ -29,6 +29,7 @@ async function fetchProjects() {
         projects.forEach(project => {
             if (project.status === 'Active') {
                 activeCount++;
+                const safeProgress = Math.min(100, Math.max(0, Number(project.progress) || 0));
                 if (activeContainer) {
                     activeContainer.innerHTML += `
                         <div class="project-item ${activeCount === 1 ? 'highlight' : ''}">
@@ -43,9 +44,9 @@ async function fetchProjects() {
                                 <span class="small-badge progress-badge">In Progress</span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill" style="--progress:${project.progress}%;"></div>
+                                <div class="progress-fill" style="--progress:${safeProgress}%;"></div>
                             </div>
-                            <div class="progress-value">${project.progress}%</div>
+                            <div class="progress-value">${safeProgress}%</div>
                         </div>
                     `;
                 }
