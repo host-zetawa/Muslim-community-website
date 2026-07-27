@@ -726,11 +726,11 @@ function openMemberModal(existing, kind) {
                             },
 
                             body: JSON.stringify({
-                                name,
+                                fullName: name,
                                 role,
                                 phone,
                                 email,
-                                joining,
+                                dateOfJoining: joining,
                                 photo
                             })
 
@@ -749,11 +749,11 @@ function openMemberModal(existing, kind) {
                             },
 
                             body: JSON.stringify({
-                                name,
+                                fullName: name,
                                 role,
                                 phone,
                                 email,
-                                joining,
+                                dateOfJoining: joining,
                                 photo
                             })
 

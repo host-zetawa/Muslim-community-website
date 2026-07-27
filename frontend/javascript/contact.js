@@ -15,10 +15,6 @@ if (navToggle && navMenu) {
 
 }
 
-
-
-
-
 // ===============================
 // Smooth Scrolling
 // ===============================
@@ -50,24 +46,59 @@ let admins = {};
 const API_BASE = "https://muslim-community.onrender.com/api";
 
 async function fetchMembers() {
-    const response = await fetch(`${API_BASE}/members`);
-    const data = await response.json();
 
-    console.log("Members:", data);
+    try {
 
-    const grid = document.getElementById("members-grid");
-    console.log("Grid:", grid);
+        const response = await fetch(`${API_BASE}/members`);
 
-    grid.innerHTML = "<h2 style='color:red'>TEST</h2>";
+        if (!response.ok) throw new Error("Failed to fetch members");
 
-    data.forEach(member => {
- grid.innerHTML += `
-<div class="abc123">
-    <h2>${member.fullName}</h2>
-    <p>${member.role}</p>
-</div>
-`;
-    });
+        const data = await response.json();
+
+        members = {};
+
+        const grid = document.getElementById("members-grid");
+
+        grid.innerHTML = "";
+
+        data.forEach(member => {
+
+            members[member._id] = member;
+
+            grid.innerHTML += `
+                <div class="member-card">
+
+                    <img
+                        src="${member.photo || "assets/default-avatar.png"}"
+                        class="member-photo"
+                        alt="${member.fullName}"
+                    >
+
+                    <h3>${member.fullName}</h3>
+
+                    <p>${member.role}</p>
+
+                    <button
+                        class="profile-btn"
+                        data-id="${member._id}"
+                        data-type="member"
+                    >
+                        View Profile
+                    </button>
+
+                </div>
+            `;
+
+        });
+
+        attachProfileEvents();
+
+    } catch (err) {
+
+        console.error(err);
+
+    }
+
 }
 
 async function fetchAdmins() {
