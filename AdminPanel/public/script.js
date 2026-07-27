@@ -1338,9 +1338,16 @@ function donationRow(label, value, fullRow) {
 function renderDonationSummary() {
     const qrBox = document.getElementById("donationSummaryQr");
     if (qrBox) {
-        qrBox.innerHTML = donationDetails.qrCodeUrl
-            ? `<img src="${donationDetails.qrCodeUrl}" alt="Donation QR">`
-            : "";
+        if (donationDetails.qrCodeUrl) {
+            qrBox.innerHTML = `<img src="${donationDetails.qrCodeUrl}" alt="Donation QR" title="Click to enlarge" style="cursor:pointer;" id="donationQrThumb">`;
+            // Wire up lightbox on newly rendered image
+            const thumb = document.getElementById('donationQrThumb');
+            if (thumb) {
+                thumb.addEventListener('click', () => openQrLightbox(donationDetails.qrCodeUrl));
+            }
+        } else {
+            qrBox.innerHTML = '<div style="color:#aaa;font-size:0.9rem;padding:20px;text-align:center;">No QR code set</div>';
+        }
     }
 
     const listEl = document.getElementById("donationSummaryList");
@@ -1354,22 +1361,73 @@ function renderDonationSummary() {
     }
 }
 
+function openQrLightbox(src) {
+    const overlay = document.getElementById('qrLightboxOverlay');
+    const img = document.getElementById('qrLightboxImg');
+    const caption = document.getElementById('qrLightboxCaption');
+    if (!overlay || !img) return;
+    img.src = src;
+    if (caption) caption.textContent = 'Scan to donate';
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeQrLightbox() {
+    const overlay = document.getElementById('qrLightboxOverlay');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
 function openDonationModal() {
     const accName = document.getElementById("accountName");
     const accNum = document.getElementById("accountNumber");
     const ifsc = document.getElementById("ifscCode");
     const qrUrl = document.getElementById("qrCodeUrl");
+    const qrFile = document.getElementById("qrCodeFile");
+    const qrPreview = document.getElementById("qrUploadPreview");
 
     if (accName) accName.value = donationDetails.accountName || "";
     if (accNum) accNum.value = donationDetails.accountNumber || "";
     if (ifsc) ifsc.value = donationDetails.ifscCode || "";
     if (qrUrl) qrUrl.value = donationDetails.qrCodeUrl || "";
+    // Reset file input and preview
+    if (qrFile) qrFile.value = "";
+    if (qrPreview) qrPreview.style.display = "none";
 
     document.getElementById("donationModalOverlay").classList.add("active");
 }
 
+// File upload preview
+const qrFileInput = document.getElementById('qrCodeFile');
+if (qrFileInput) {
+    qrFileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('qrUploadPreview');
+            const previewImg = document.getElementById('qrPreviewImg');
+            const qrUrl = document.getElementById('qrCodeUrl');
+            if (previewImg) previewImg.src = e.target.result;
+            if (preview) preview.style.display = 'block';
+            // Auto-fill URL field with base64 so it's used on save
+            if (qrUrl) qrUrl.value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 function closeDonationModal() {
     document.getElementById('donationModalOverlay').classList.remove('active');
+}
+
+if (document.getElementById('qrLightboxCloseBtn')) {
+    document.getElementById('qrLightboxCloseBtn').addEventListener('click', closeQrLightbox);
+}
+if (document.getElementById('qrLightboxOverlay')) {
+    document.getElementById('qrLightboxOverlay').addEventListener('click', e => {
+        if (e.target.id === 'qrLightboxOverlay') closeQrLightbox();
+    });
 }
 
 if (document.getElementById('editDonationBtn')) {

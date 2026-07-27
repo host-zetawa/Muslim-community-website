@@ -105,8 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const donateTriggers = document.querySelectorAll('.open-modal-donate');
     const memberTriggers = document.querySelectorAll('.open-modal-member');
-    const closeButtons = document.querySelectorAll('.modal-close');
-    const modalOverlays = document.querySelectorAll('.modal-overlay');
+    const closeButtons = document.querySelectorAll('.modal-card .modal-close');
+    const modalOverlays = document.querySelectorAll('.modal-overlay:not(#qr-lightbox-overlay)');
 
     donateTriggers.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -372,25 +372,98 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchNotices();
 
     // ----------------------------------
-    // 9. Dynamic Donation Bank Details
+    // 9. Dynamic Donation Bank Details + QR Lightbox
     // ----------------------------------
+
+    const qrLightboxOverlay = document.getElementById('qr-lightbox-overlay');
+    const qrLightboxImg = document.getElementById('qr-lightbox-img');
+
+    function openQrPopup(src) {
+        if (!qrLightboxOverlay || !qrLightboxImg || !src) return;
+        qrLightboxImg.src = src;
+        qrLightboxOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeQrPopup() {
+        if (qrLightboxOverlay) {
+            qrLightboxOverlay.classList.remove('active');
+            const activeOtherModal = document.querySelector('.modal-overlay.active');
+            if (!activeOtherModal) {
+                document.body.style.overflow = 'auto';
+            }
+        }
+    }
+
+    if (qrLightboxOverlay) {
+        const qrCloseBtn = qrLightboxOverlay.querySelector('.modal-close');
+        if (qrCloseBtn) {
+            qrCloseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeQrPopup();
+            });
+        }
+        qrLightboxOverlay.addEventListener('click', (e) => {
+            if (e.target === qrLightboxOverlay) {
+                closeQrPopup();
+            }
+        });
+    }
+
     const fetchDonationDetails = async () => {
         try {
             const response = await fetch('https://muslim-community.onrender.com/api/settings/donation');
             if (!response.ok) throw new Error('Failed to fetch donation details');
             const data = await response.json();
 
+            // Update donate modal QR + bank details (used on all pages)
             const qrImg = document.getElementById('donate-qr-img');
             const accName = document.getElementById('donate-account-name');
             const accNum = document.getElementById('donate-account-number');
             const ifsc = document.getElementById('donate-ifsc-code');
 
-            if (qrImg && data.qrCodeUrl) qrImg.src = data.qrCodeUrl;
+            if (qrImg) {
+                if (data.qrCodeUrl) qrImg.src = data.qrCodeUrl;
+                qrImg.style.cursor = 'pointer';
+                qrImg.onclick = (e) => {
+                    e.stopPropagation();
+                    openQrPopup(qrImg.src);
+                };
+            }
             if (accName) accName.textContent = data.accountName || 'N/A';
             if (accNum) accNum.textContent = data.accountNumber || 'N/A';
             if (ifsc) ifsc.textContent = data.ifscCode || 'N/A';
+
+            // Update the home page "Scan & Donate" QR image and wire popup
+            const homeQr = document.getElementById('home-qr-image');
+            if (homeQr) {
+                if (data.qrCodeUrl) homeQr.src = data.qrCodeUrl;
+                const homeQrBlock = homeQr.closest('.qr-block');
+                if (homeQrBlock) {
+                    homeQrBlock.style.cursor = 'pointer';
+                    homeQrBlock.onclick = (e) => {
+                        e.stopPropagation();
+                        openQrPopup(homeQr.src);
+                    };
+                }
+            }
+
         } catch (error) {
             console.error('Error fetching donation details:', error);
+            // Even if fetch fails, wire existing images
+            const qrImg = document.getElementById('donate-qr-img');
+            if (qrImg) {
+                qrImg.style.cursor = 'pointer';
+                qrImg.onclick = (e) => { e.stopPropagation(); openQrPopup(qrImg.src); };
+            }
+            const homeQr = document.getElementById('home-qr-image');
+            if (homeQr) {
+                const homeQrBlock = homeQr.closest('.qr-block');
+                if (homeQrBlock) {
+                    homeQrBlock.style.cursor = 'pointer';
+                    homeQrBlock.onclick = (e) => { e.stopPropagation(); openQrPopup(homeQr.src); };
+                }
+            }
         }
     };
 
