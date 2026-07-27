@@ -49,7 +49,7 @@ let projects = [];
 const API_URL = "https://muslim-community.onrender.com/api/projects";
 const MEMBER_API = "https://muslim-community.onrender.com/api/members";
 const GALLERY_API = "https://muslim-community.onrender.com/api/gallery";
-const DONATION_API = "https://muslim-community.onrender.com/api/settings/donation";
+const DONATION_API = "https://muslim-community.onrender.com/api/donations";
 const NOTICE_API = "https://muslim-community.onrender.com/api/notices";
 const ADMIN_API = "https://muslim-community.onrender.com/api/admin";
 
@@ -187,9 +187,8 @@ function renderExecMembers() {
            <td class="cell-title">
                 <div class="member-info">
                     <img
-                        src="${member.photo || 'images/default-avatar.png'}"
-                        class="member-avatar"
-                        alt="${member.fullName ||member.name}">
+                        src="${member.photo || 'assets/default-avatar.png'}"
+                        class="member-avatar">
 
                     <span>
                         ${member.fullName || member.name} — ${member.role}
@@ -201,7 +200,7 @@ function renderExecMembers() {
 
             <td>${member.email}</td>
 
-            <td>${formatSince(member.dateOfJoining || member.joining)}</td>
+            <td>${formatSince(member.dateOfJoining ||member.joining)}</td>
 
             <td class="row-actions">
                 <button class="btn btn-outline btn-sm edit-exec">
@@ -421,9 +420,6 @@ function renderAlbums() {
                         + Upload
                     </button>
 
-                    <button class="btn btn-outline btn-sm delete-album" style="color:var(--color-danger); border-color:var(--color-danger);">
-                        Delete
-                    </button>
                 </div>
 
             </div>
@@ -473,22 +469,6 @@ function renderAlbums() {
 
         });
 
-    });
-
-        document.querySelectorAll(".delete-album").forEach(btn => {
-        btn.addEventListener("click", async e => {
-            const id = e.target.closest(".album-card").dataset.id;
-            if (!confirm("Are you sure you want to delete this entire album?")) return;
-            try {
-                const response = await fetch(`${GALLERY_API}/${id}`, { method: "DELETE" });
-                if (!response.ok) throw new Error("Failed to delete album");
-                showToast("Album deleted");
-                fetchGallery();
-            } catch (err) {
-                console.error(err);
-                showToast("Error deleting album");
-            }
-        });
     });
 
 }
@@ -746,11 +726,11 @@ function openMemberModal(existing, kind) {
                             },
 
                             body: JSON.stringify({
-                                name,
+                                fullName: name,
                                 role,
                                 phone,
                                 email,
-                                joining,
+                                dateOfJoining: joining,
                                 photo
                             })
 
@@ -769,11 +749,11 @@ function openMemberModal(existing, kind) {
                             },
 
                             body: JSON.stringify({
-                                name,
+                                fullName: name,
                                 role,
                                 phone,
                                 email,
-                                joining,
+                                dateOfJoining: joining,
                                 photo
                             })
 
@@ -951,16 +931,12 @@ function openAlbumModal(existing) {
         )}
 
         <div class="form-group">
-            <label>Cover Image (Upload)</label>
-            ${existing && existing.coverImage ? 
-                `<div style="margin-bottom:8px;">
-                <img src="${existing.coverImage}" style="max-width:100px; border-radius:4px;">
-                </div>` : ""}
+            <label>Cover Image URL (optional)</label>
             <input
-                type="file"
+                type="text"
                 class="form-input"
-                id="a_cover_file"
-                accept="image/*"
+                id="a_cover"
+                value="${existing ? (existing.coverImage || "") : ""}"
             >
         </div>
         `,
@@ -971,17 +947,8 @@ function openAlbumModal(existing) {
                 document.getElementById("a_name").value.trim() ||
                 "Untitled Album";
 
-                     let coverImage = existing ? existing.coverImage : "";
-            const fileInput = document.getElementById("a_cover_file");
-            if (fileInput.files && fileInput.files[0]) {
-                const file = fileInput.files[0];
-                coverImage = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = e => resolve(e.target.result);
-                    reader.onerror = e => reject(e);
-                    reader.readAsDataURL(file);
-                });
-            }
+            const coverImage =
+                document.getElementById("a_cover").value.trim();
 
             try {
 
@@ -1336,65 +1303,57 @@ function donationRow(label, value, fullRow) {
 }
  
 function renderDonationSummary() {
+
     const qrBox = document.getElementById("donationSummaryQr");
-    if (qrBox) {
-        if (donationDetails.qrCodeUrl) {
-            qrBox.innerHTML = `<img src="${donationDetails.qrCodeUrl}" alt="Donation QR" title="Click to enlarge" style="cursor:pointer;" id="donationQrThumb">`;
-            // Wire up lightbox on newly rendered image
-            const thumb = document.getElementById('donationQrThumb');
-            if (thumb) {
-                thumb.addEventListener('click', () => openQrLightbox(donationDetails.qrCodeUrl));
-            }
-        } else {
-            qrBox.innerHTML = '<div style="color:#aaa;font-size:0.9rem;padding:20px;text-align:center;">No QR code set</div>';
-        }
-    }
 
-    const listEl = document.getElementById("donationSummaryList");
-    if (listEl) {
-        listEl.innerHTML = [
-            donationRow("Account Name", donationDetails.accountName),
-            donationRow("Account Number", donationDetails.accountNumber),
-            donationRow("IFSC Code", donationDetails.ifscCode),
-            donationRow("QR Code URL", donationDetails.qrCodeUrl)
-        ].join("");
-    }
+    qrBox.innerHTML = donationDetails.qrImage
+        ? `<img src="${donationDetails.qrImage}" alt="Donation QR">`
+        : "";
+
+    document.getElementById("donationSummaryList").innerHTML = [
+
+        donationRow("UPI ID", donationDetails.upiId),
+
+        donationRow("Mobile number", donationDetails.mobileNumber),
+
+        donationRow("Account name", donationDetails.accountName),
+
+        donationRow("Account number", donationDetails.accountNumber),
+
+        donationRow("IFSC", donationDetails.ifsc)
+
+    ].join("");
+
 }
-
-function openQrLightbox(src) {
-    const overlay = document.getElementById('qrLightboxOverlay');
-    const img = document.getElementById('qrLightboxImg');
-    const caption = document.getElementById('qrLightboxCaption');
-    if (!overlay || !img) return;
-    img.src = src;
-    if (caption) caption.textContent = 'Scan to donate';
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeQrLightbox() {
-    const overlay = document.getElementById('qrLightboxOverlay');
-    if (overlay) overlay.classList.remove('active');
-    document.body.style.overflow = '';
-}
-
 function openDonationModal() {
-    const accName = document.getElementById("accountName");
-    const accNum = document.getElementById("accountNumber");
-    const ifsc = document.getElementById("ifscCode");
-    const qrUrl = document.getElementById("qrCodeUrl");
-    const qrFile = document.getElementById("qrCodeFile");
-    const qrPreview = document.getElementById("qrUploadPreview");
 
-    if (accName) accName.value = donationDetails.accountName || "";
-    if (accNum) accNum.value = donationDetails.accountNumber || "";
-    if (ifsc) ifsc.value = donationDetails.ifscCode || "";
-    if (qrUrl) qrUrl.value = donationDetails.qrCodeUrl || "";
-    // Reset file input and preview
-    if (qrFile) qrFile.value = "";
-    if (qrPreview) qrPreview.style.display = "none";
+    document.getElementById("upiId").value =
+        donationDetails.upiId || "";
 
-    document.getElementById("donationModalOverlay").classList.add("active");
+    document.getElementById("mobileNumber").value =
+        donationDetails.mobileNumber || "";
+
+    document.getElementById("accountName").value =
+        donationDetails.accountName || "";
+
+    document.getElementById("accountNumber").value =
+        donationDetails.accountNumber || "";
+
+    document.getElementById("ifscCode").value =
+        donationDetails.ifsc || "";
+
+    pendingQrUrl = donationDetails.qrImage || "";
+
+    const qrPreview = document.getElementById("qrPreviewLeft");
+
+    qrPreview.innerHTML = donationDetails.qrImage
+        ? `<img src="${donationDetails.qrImage}" alt="Donation QR">`
+        : "";
+
+    document
+        .getElementById("donationModalOverlay")
+        .classList.add("active");
+
 }
 
 // File upload preview
@@ -1421,58 +1380,106 @@ function closeDonationModal() {
     document.getElementById('donationModalOverlay').classList.remove('active');
 }
 
-if (document.getElementById('qrLightboxCloseBtn')) {
-    document.getElementById('qrLightboxCloseBtn').addEventListener('click', closeQrLightbox);
-}
-if (document.getElementById('qrLightboxOverlay')) {
-    document.getElementById('qrLightboxOverlay').addEventListener('click', e => {
-        if (e.target.id === 'qrLightboxOverlay') closeQrLightbox();
-    });
-}
+document.getElementById('editDonationBtn').addEventListener('click', openDonationModal);
+document.getElementById('donationModalCloseBtn').addEventListener('click', closeDonationModal);
+document.getElementById('donationModalCancelBtn').addEventListener('click', closeDonationModal);
+document.getElementById('donationModalOverlay').addEventListener('click', e => {
+    if (e.target.id === 'donationModalOverlay') closeDonationModal();
+});
 
-if (document.getElementById('editDonationBtn')) {
-    document.getElementById('editDonationBtn').addEventListener('click', openDonationModal);
-}
-if (document.getElementById('donationModalCloseBtn')) {
-    document.getElementById('donationModalCloseBtn').addEventListener('click', closeDonationModal);
-}
-if (document.getElementById('donationModalCancelBtn')) {
-    document.getElementById('donationModalCancelBtn').addEventListener('click', closeDonationModal);
-}
-if (document.getElementById('donationModalOverlay')) {
-    document.getElementById('donationModalOverlay').addEventListener('click', e => {
-        if (e.target.id === 'donationModalOverlay') closeDonationModal();
-    });
-}
 
-if (document.getElementById("saveDonationBtn")) {
-    document.getElementById("saveDonationBtn").addEventListener("click", async () => {
-        const data = {
-            accountName: document.getElementById("accountName").value.trim(),
-            accountNumber: document.getElementById("accountNumber").value.trim(),
-            ifscCode: document.getElementById("ifscCode").value.trim(),
-            qrCodeUrl: document.getElementById("qrCodeUrl").value.trim()
-        };
 
-        try {
+document.getElementById("saveDonationBtn").addEventListener("click", async () => {
+
+    const data = {
+
+        qrImage: pendingQrUrl,
+
+        upiId: document.getElementById("upiId").value.trim(),
+
+        mobileNumber: document.getElementById("mobileNumber").value.trim(),
+
+        accountName: document.getElementById("accountName").value.trim(),
+
+        accountNumber: document.getElementById("accountNumber").value.trim(),
+
+        ifsc: document.getElementById("ifscCode").value.trim()
+
+    };
+
+    try {
+
+        // ===========================
+        // First time → Create document
+        // ===========================
+
+        if (!donationDetails._id) {
+
             const response = await fetch(DONATION_API, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
                 body: JSON.stringify(data)
+
             });
 
-            if (!response.ok) throw new Error("Failed to save donation details");
+            if (!response.ok) {
 
-            donationDetails = await response.json();
-            renderDonationSummary();
-            closeDonationModal();
-            showToast("Donation details saved successfully");
-        } catch (err) {
-            console.error(err);
-            showToast("Failed to save donation details");
+                throw new Error("Failed to create donation details");
+
+            }
+
         }
-    });
-}
+
+        // ===========================
+        // Already exists → Update
+        // ===========================
+
+        else {
+
+            const response = await fetch(`${DONATION_API}/${donationDetails._id}`, {
+
+                method: "PUT",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify(data)
+
+            });
+
+            if (!response.ok) {
+
+                throw new Error("Failed to update donation details");
+
+            }
+
+        }
+
+        await fetchDonation();
+
+        renderDonationSummary();
+
+        closeDonationModal();
+
+        showToast("Donation details saved");
+
+    }
+
+    catch (err) {
+
+        console.error(err);
+
+        showToast("Failed to save donation details");
+
+    }
+
+});
 
 /* ---------- Init ---------- */
 async function fetchProjects() {
@@ -1576,9 +1583,16 @@ async function fetchAdmins() {
 }
 
 fetchProjects();
+console.log("fetchMembers called");
 fetchMembers();
+console.log("fetchMembers called");
 renderGeneralMembers();
+console.log("fetchMembers called");
 fetchNotices();
+console.log("fetchMembers called");
 fetchGallery();
+console.log("fetchMembers called");
 fetchAdmins();
+console.log("fetchMembers called");
 fetchDonation();
+console.log("fetchMembers called");

@@ -23,7 +23,8 @@ console.log(JWT_SECRET);
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 const PORT = 3000;
 
 
@@ -247,11 +248,24 @@ app.get("/api/members", async (req, res) => {
 // Create a member
 app.post("/api/members", async (req, res) => {
     try {
+
+        console.log(req.body);
+
         const member = new Member(req.body);
+
         await member.save();
+
         res.status(201).json(member);
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+
+        console.error(error);
+
+        res.status(500).json({
+            message: error.message,
+            stack: error.stack
+        });
+
     }
 });
 
