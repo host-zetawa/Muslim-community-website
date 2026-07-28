@@ -494,6 +494,7 @@ function renderAdminUsers() {
             <div class="settings-row-inline">
                 <span class="user-name">${u.name}</span>
                 <span class="user-email">${u.email}</span>
+                <span class="user-email">${u.phone || "No phone"}</span>
                 <span class="role-badge ${u.role === "SUPER ADMIN" ? "super" : "admin"}">${u.role}</span>
             </div>
 
@@ -1274,6 +1275,8 @@ document.getElementById("addUserBtn").addEventListener("click", () => {
 
         ${fieldHtml("Email", "u_email")}
 
+        ${fieldHtml("Phone", "u_phone")}
+
         ${fieldHtml("Password", "u_password", "", "password")}
 
         <div class="form-group">
@@ -1288,6 +1291,7 @@ document.getElementById("addUserBtn").addEventListener("click", () => {
 
         const name = document.getElementById("u_name").value.trim();
         const email = document.getElementById("u_email").value.trim();
+        const phone = document.getElementById("u_phone").value.trim();
         const password = document.getElementById("u_password").value;
         const role = document.getElementById("u_role").value;
 
@@ -1301,6 +1305,7 @@ document.getElementById("addUserBtn").addEventListener("click", () => {
                 body: JSON.stringify({
                     name,
                     email,
+                    phone,
                     password,
                     role
                 })

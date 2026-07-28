@@ -64,7 +64,7 @@ app.get("/", (req, res) => {
 // --- Auth Routes ---
 app.post("/api/admin/signup", async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, phone } = req.body;
         
         // Check if admin already exists
         const existingAdmin = await Admin.findOne({ email });
@@ -79,7 +79,8 @@ app.post("/api/admin/signup", async (req, res) => {
         const newAdmin = new Admin({
             name,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            phone: phone || ""
         });
         
         await newAdmin.save();
@@ -449,6 +450,7 @@ app.put("/api/admin/:id", async (req, res) => {
         const updateData = {
             name: req.body.name,
             email: req.body.email,
+            phone: req.body.phone || "",
             role: req.body.role
         };
 
@@ -497,7 +499,7 @@ app.post("/api/admin", async (req, res) => {
 
     try {
 
-        const { name, email, password, role } = req.body;
+        const { name, email, password, phone, role } = req.body;
 
         const existingAdmin = await Admin.findOne({ email });
 
@@ -514,6 +516,7 @@ app.post("/api/admin", async (req, res) => {
             name,
             email,
             password: hashedPassword,
+            phone: phone || "",
             role
         });
 
