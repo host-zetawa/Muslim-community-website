@@ -489,11 +489,13 @@ function renderAlbums() {
 function renderAdminUsers() {
     document.getElementById("adminUsersList").innerHTML = adminUsers.map(u => `
         <div class="settings-row" data-id="${u._id}">
-            <div class="settings-row-inline">
-                <span class="user-name">${u.name}</span>
-                <span class="user-email">${u.email}</span>
-                <span class="user-email">${u.phone || "No phone"}</span>
-                <span class="role-badge ${u.role === "SUPER ADMIN" ? "super" : "admin"}">${u.role}</span>
+            <div class="settings-row-inline" style="display:flex;align-items:center;gap:12px;">
+                <img src="${u.photo && u.photo.trim() ? u.photo : 'assets/default-avatar.png'}" class="admin-pfp-avatar" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--color-primary,#116530);flex-shrink:0;" alt="${u.name}">
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span class="user-name" style="font-weight:700;font-size:0.96rem;color:var(--color-text-dark,#222);">${u.name}</span>
+                    <span class="user-email" style="font-size:0.83rem;color:var(--color-text-medium,#555);">${u.email} &bull; ${u.phone || "No phone"}</span>
+                </div>
+                <span class="role-badge ${u.role === "SUPER ADMIN" ? "super" : "admin"}" style="margin-left:auto;">${u.role}</span>
             </div>
 
             <div class="settings-row-actions">
@@ -1192,10 +1194,12 @@ function openAdminUserModal(existing) {
         ${fieldHtml("Full name", "a_name", existing ? existing.name : "")}
         ${fieldHtml("Email", "a_email", existing ? existing.email : "")}
         ${fieldHtml("Phone", "a_phone", existing ? (existing.phone || "") : "")}
-
         <div class="form-group">
-            <label>Profile Picture</label>
+            <label>Profile Picture (PFP)</label>
             <input type="file" class="form-input" id="u_photo" accept="image/*">
+            <div id="u_photoPreview" style="margin-top:8px;display:${existing && existing.photo ? 'block' : 'none'};">
+                <img id="u_photoPreviewImg" src="${existing ? (existing.photo || "") : ""}" alt="PFP" style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid var(--color-primary,#116530);">
+            </div>
         </div>
         ${fieldHtml(isEdit ? "Password (leave blank to keep current)" : "Password", "a_password", "", "password")}
         <div class="form-group">
@@ -1212,6 +1216,7 @@ function openAdminUserModal(existing) {
             const phone = document.getElementById("a_phone").value.trim();
             const password = document.getElementById("a_password").value;
             const role = document.getElementById("a_role").value;
+            const photoInput = document.getElementById("u_photo");
 
             if (!name || !email) {
                 alert("Name and email are required.");
@@ -1222,7 +1227,12 @@ function openAdminUserModal(existing) {
                 return false;
             }
 
-            const payload = { name, email, phone, role };
+            let photo = existing?.photo || "";
+            if (photoInput && photoInput.files.length) {
+                photo = await fileToDataUrl(photoInput.files[0]);
+            }
+
+            const payload = { name, email, phone, role, photo };
             if (password) payload.password = password;
 
             try {
@@ -1250,6 +1260,22 @@ function openAdminUserModal(existing) {
             }
         }
     );
+
+    const photoInput = document.getElementById("u_photo");
+    if (photoInput) {
+        photoInput.addEventListener("change", function() {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewContainer = document.getElementById("u_photoPreview");
+                const previewImg = document.getElementById("u_photoPreviewImg");
+                if (previewImg) previewImg.src = e.target.result;
+                if (previewContainer) previewContainer.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 }
 
 if (document.getElementById("addUserBtn")) {
