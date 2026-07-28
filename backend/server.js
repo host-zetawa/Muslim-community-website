@@ -71,7 +71,7 @@ app.get("/", (req, res) => {
 // --- Auth Routes ---
 app.post("/api/admin/signup", async (req, res) => {
     try {
-        const { name, email, password, phone } = req.body;
+        const { name, email, password, phone, photo } = req.body;
         
         // Check if admin already exists
         const existingAdmin = await Admin.findOne({ email });
@@ -87,11 +87,20 @@ app.post("/api/admin/signup", async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            phone: phone || ""
+            phone: phone || "",
+            photo: photo || ""
         });
         
         await newAdmin.save();
-        res.status(201).json({ message: "Admin created successfully" });
+        res.status(201).json({
+            message: "Admin created successfully",
+            admin: {
+                name: newAdmin.name,
+                email: newAdmin.email,
+                phone: newAdmin.phone || "",
+                photo: newAdmin.photo || ""
+            }
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -120,7 +129,7 @@ app.post("/api/admin/login", async (req, res) => {
             { expiresIn: "1d" }
         );
         
-        res.json({ token, admin: { id: admin._id, name: admin.name, email: admin.email, role: admin.role } });
+        res.json({ token, admin: { id: admin._id, name: admin.name, email: admin.email, phone: admin.phone || "", photo: admin.photo || "", role: admin.role } });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -457,6 +466,7 @@ app.put("/api/admin/:id", async (req, res) => {
             name: req.body.name,
             email: req.body.email,
             phone: req.body.phone || "",
+            photo: req.body.photo || "",
             role: req.body.role
         };
 
@@ -494,7 +504,7 @@ app.delete("/api/admin/:id", async (req, res) => {
 
 app.post("/api/admin", async (req, res) => {
     try {
-        const { name, email, password, phone, role } = req.body;
+        const { name, email, password, phone, photo, role } = req.body;
 
         const existingAdmin = await Admin.findOne({ email });
 
@@ -512,6 +522,7 @@ app.post("/api/admin", async (req, res) => {
             email,
             password: hashedPassword,
             phone: phone || "",
+            photo: photo || "",
             role
         });
 

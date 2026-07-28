@@ -679,7 +679,16 @@ padding:92px 18px 18px;
 
     box-shadow:0 10px 20px rgba(0,0,0,.18);
     border:4px solid white;
+    overflow:hidden;
+    background:#116530;
 
+}
+
+.popup-avatar-image{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
 }
 
 .popup-online{

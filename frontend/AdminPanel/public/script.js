@@ -1192,6 +1192,11 @@ function openAdminUserModal(existing) {
         ${fieldHtml("Full name", "a_name", existing ? existing.name : "")}
         ${fieldHtml("Email", "a_email", existing ? existing.email : "")}
         ${fieldHtml("Phone", "a_phone", existing ? (existing.phone || "") : "")}
+
+        <div class="form-group">
+            <label>Profile Picture</label>
+            <input type="file" class="form-input" id="u_photo" accept="image/*">
+        </div>
         ${fieldHtml(isEdit ? "Password (leave blank to keep current)" : "Password", "a_password", "", "password")}
         <div class="form-group">
             <label>Role</label>
