@@ -1422,13 +1422,27 @@ async function fetchProjects() {
     }
 }
 
+function getMemberCategory(m) {
+    if (m && m.memberType) {
+        return m.memberType.toUpperCase();
+    }
+    if (m && m.type) {
+        return m.type.toUpperCase();
+    }
+    const roleStr = (m?.role || '').toLowerCase();
+    if (roleStr.includes('general') || roleStr === 'member') {
+        return 'GENERAL';
+    }
+    return 'EXECUTIVE';
+}
+
 async function fetchMembers() {
     try {
         const response = await fetch(MEMBER_API);
         if (!response.ok) throw new Error("Failed to fetch members");
         const allMembers = await response.json();
-        execMembers = allMembers.filter(m => (m.memberType || 'EXECUTIVE').toUpperCase() === 'EXECUTIVE');
-        generalMembers = allMembers.filter(m => (m.memberType || '').toUpperCase() === 'GENERAL');
+        execMembers = allMembers.filter(m => getMemberCategory(m) === 'EXECUTIVE');
+        generalMembers = allMembers.filter(m => getMemberCategory(m) === 'GENERAL');
         renderExecMembers();
         const searchInput = document.getElementById('memberSearch');
         renderGeneralMembers(searchInput ? searchInput.value : '');

@@ -46,11 +46,17 @@ function normalizeMemberPayload(body = {}) {
         payload.joining = payload.dateOfJoining;
     }
 
-    if (!payload.memberType && payload.type) {
-        payload.memberType = payload.type;
-    }
-    if (!payload.memberType) {
-        payload.memberType = "EXECUTIVE";
+    if (payload.memberType) {
+        payload.memberType = payload.memberType.toUpperCase();
+    } else if (payload.type) {
+        payload.memberType = payload.type.toUpperCase();
+    } else {
+        const roleStr = (payload.role || '').toLowerCase();
+        if (roleStr.includes('general') || roleStr === 'member') {
+            payload.memberType = 'GENERAL';
+        } else {
+            payload.memberType = 'EXECUTIVE';
+        }
     }
 
     return payload;

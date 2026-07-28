@@ -53,35 +53,53 @@ async function fetchMembers() {
 
         members = {};
         const membersGrid = document.getElementById("members-grid");
+
         if (membersGrid) membersGrid.innerHTML = "";
+
+        let execCount = 0;
 
         data.forEach(member => {
             members[member._id] = member;
-            const isGeneral = (member.memberType || '').toUpperCase() === 'GENERAL';
 
-            const cardHtml = `
-                <div class="community-card">
-                    <div class="card-strip"></div>
-                    <div class="avatar">
-                        <img src="${member.photo || "assets/default-avatar.png"}" alt="${member.fullName || member.name || "Member"}" class="member-photo">
-                        <span class="status"></span>
-                    </div>
-                    <h3 class="member-title">${member.fullName || member.name || "Member"}</h3>
-                    <div class="designation">${member.role || (isGeneral ? "General Member" : "Executive Member")}</div>
-                    <div class="info">
-                        <p><span>☎</span> ${member.phone || "Not Available"}</p>
-                        <p><span>✉</span> ${member.email || "Not Available"}</p>
-                        <p><span>📅</span> ${member.joining || member.dateOfJoining || "Not Available"}</p>
-                    </div>
-                    <button class="profile-btn" data-id="${member._id}" data-type="member">View Profile ></button>
-                </div>
-            `;
+            let category = 'EXECUTIVE';
+            if (member.memberType) {
+                category = member.memberType.toUpperCase();
+            } else if (member.type) {
+                category = member.type.toUpperCase();
+            } else {
+                const roleStr = (member.role || '').toLowerCase();
+                if (roleStr.includes('general') || roleStr === 'member') {
+                    category = 'GENERAL';
+                }
+            }
 
-            if (membersGrid) membersGrid.innerHTML += cardHtml;
+            // Only Executive Members are shown in Community Members section
+            if (category === 'EXECUTIVE') {
+                execCount++;
+                const cardHtml = `
+                    <div class="community-card">
+                        <div class="card-strip"></div>
+                        <div class="avatar">
+                            <img src="${member.photo || "assets/default-avatar.png"}" alt="${member.fullName || member.name || "Member"}" class="member-photo">
+                            <span class="status"></span>
+                        </div>
+                        <h3 class="member-title">${member.fullName || member.name || "Member"}</h3>
+                        <div class="designation">${member.role || "Executive Member"}</div>
+                        <div class="info">
+                            <p><span>☎</span> ${member.phone || "Not Available"}</p>
+                            <p><span>✉</span> ${member.email || "Not Available"}</p>
+                            <p><span>📅</span> ${member.joining || member.dateOfJoining || "Not Available"}</p>
+                        </div>
+                        <button class="profile-btn" data-id="${member._id}" data-type="member">View Profile ></button>
+                    </div>
+                `;
+
+                if (membersGrid) membersGrid.innerHTML += cardHtml;
+            }
         });
 
-        if (membersGrid && data.length === 0) {
-            membersGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">No community members listed.</div>';
+        if (membersGrid && execCount === 0) {
+            membersGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">No executive members listed.</div>';
         }
 
         attachProfileEvents();
