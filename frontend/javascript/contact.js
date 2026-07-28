@@ -66,28 +66,38 @@ async function fetchMembers() {
             members[member._id] = member;
 
             grid.innerHTML += `
-                <div class="member-card">
+<div class="community-card">
 
-                    <img
-                        src="${member.photo || "assets/default-avatar.png"}"
-                        class="member-photo"
-                        alt="${member.fullName}"
-                    >
+    <div class="card-strip"></div>
 
-                    <h3>${member.fullName}</h3>
+    <div class="avatar">
+        <img
+            src="${member.photo || "assets/default-avatar.png"}"
+            alt="${member.fullName}"
+            class="member-photo"
+        >
+        <span class="status"></span>
+    </div>
 
-                    <p>${member.role}</p>
+    <h3 class="member-title">${member.fullName}</h3>
 
-                    <button
-                        class="profile-btn"
-                        data-id="${member._id}"
-                        data-type="member"
-                    >
-                        View Profile
-                    </button>
+    <div class="designation">${member.role}</div>
 
-                </div>
-            `;
+    <div class="info">
+        <p><span>☎</span> ${member.phone || "Not Available"}</p>
+        <p><span>✉</span> ${member.email || "Not Available"}</p>
+        <p><span>📅</span> ${member.joining || member.dateOfJoining || "Not Available"}</p>
+    </div>
+
+    <button
+        class="profile-btn"
+        data-id="${member._id}"
+        data-type="member">
+        View Profile >
+    </button>
+
+</div>
+`;
 
         });
 
@@ -122,26 +132,34 @@ async function fetchAdmins() {
             admins[admin._id] = admin;
 
             grid.innerHTML += `
-                <div class="member-card">
+<div class="community-card">
 
-                    <div class="member-photo admin-avatar">
-                        ${admin.name.charAt(0).toUpperCase()}
-                    </div>
+    <div class="card-strip"></div>
 
-                    <h3>${admin.name}</h3>
+    <div class="avatar green">
+        ${admin.name.charAt(0).toUpperCase()}
+        <span class="status"></span>
+    </div>
 
-                    <p>${admin.role}</p>
+    <h3 class="member-title">${admin.name}</h3>
 
-                    <button
-                        class="profile-btn"
-                        data-id="${admin._id}"
-                        data-type="admin"
-                    >
-                        View Profile
-                    </button>
+    <div class="designation">${admin.role}</div>
 
-                </div>
-            `;
+    <div class="info">
+        <p><span>☎</span> ${admin.phone || "Not Available"}</p>
+        <p><span>✉</span> ${admin.email || "Not Available"}</p>
+        <p><span>📅</span> ${admin.joining || admin.dateOfJoining || "Not Available"}</p>
+    </div>
+
+    <button
+        class="profile-btn"
+        data-id="${admin._id}"
+        data-type="admin">
+        View Profile >
+    </button>
+
+</div>
+`;
 
         });
 

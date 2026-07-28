@@ -843,3 +843,25 @@ padding:92px 18px 18px;
     background:#0a4d23;
 
 }
+.avatar {
+    width: 78px;
+    height: 78px;
+    margin: 18px auto 12px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+}
+
+.member-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
+.status {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+}
