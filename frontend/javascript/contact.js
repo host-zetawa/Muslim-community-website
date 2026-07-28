@@ -46,131 +46,96 @@ let admins = {};
 const API_BASE = "https://muslim-community.onrender.com/api";
 
 async function fetchMembers() {
-
     try {
-
         const response = await fetch(`${API_BASE}/members`);
-
         if (!response.ok) throw new Error("Failed to fetch members");
-
         const data = await response.json();
 
-        members = {};
+        const adminGrid = document.getElementById("admin-grid");
+        const membersGrid = document.getElementById("members-grid");
 
-        const grid = document.getElementById("members-grid");
+        if (membersGrid) membersGrid.innerHTML = "";
 
-        grid.innerHTML = "";
+        let generalCount = 0;
 
         data.forEach(member => {
-
             members[member._id] = member;
+            const isGeneral = (member.memberType || '').toUpperCase() === 'GENERAL';
 
-            grid.innerHTML += `
-<div class="community-card">
+            const cardHtml = `
+                <div class="community-card">
+                    <div class="card-strip"></div>
+                    <div class="avatar">
+                        <img src="${member.photo || "assets/default-avatar.png"}" alt="${member.fullName || member.name || "Member"}" class="member-photo">
+                        <span class="status"></span>
+                    </div>
+                    <h3 class="member-title">${member.fullName || member.name || "Member"}</h3>
+                    <div class="designation">${member.role || (isGeneral ? "General Member" : "Executive Member")}</div>
+                    <div class="info">
+                        <p><span>☎</span> ${member.phone || "Not Available"}</p>
+                        <p><span>✉</span> ${member.email || "Not Available"}</p>
+                        <p><span>📅</span> ${member.joining || member.dateOfJoining || "Not Available"}</p>
+                    </div>
+                    <button class="profile-btn" data-id="${member._id}" data-type="member">View Profile ></button>
+                </div>
+            `;
 
-    <div class="card-strip"></div>
-
-    <div class="avatar">
-        <img
-            src="${member.photo || "assets/default-avatar.png"}"
-            alt="${member.fullName || member.name || "Member"}"
-            class="member-photo"
-        >
-        <span class="status"></span>
-    </div>
-
-    <h3 class="member-title">${member.fullName || member.name || "Member"}</h3>
-
-    <div class="designation">${member.role}</div>
-
-    <div class="info">
-        <p><span>☎</span> ${member.phone || "Not Available"}</p>
-        <p><span>✉</span> ${member.email || "Not Available"}</p>
-        <p><span>📅</span> ${member.joining || member.dateOfJoining || "Not Available"}</p>
-    </div>
-
-    <button
-        class="profile-btn"
-        data-id="${member._id}"
-        data-type="member">
-        View Profile >
-    </button>
-
-</div>
-`;
-
+            if (isGeneral) {
+                generalCount++;
+                if (membersGrid) membersGrid.innerHTML += cardHtml;
+            } else {
+                if (adminGrid) adminGrid.innerHTML += cardHtml;
+            }
         });
 
+        if (membersGrid && generalCount === 0) {
+            membersGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">No general community members listed.</div>';
+        }
+
         attachProfileEvents();
-
     } catch (err) {
-
         console.error(err);
-
     }
-
 }
 
 async function fetchAdmins() {
-
     try {
-
         const response = await fetch(`${API_BASE}/admin`);
-
         if (!response.ok) throw new Error("Failed to fetch admins");
-
         const data = await response.json();
 
         admins = {};
-
         const grid = document.getElementById("admin-grid");
-
-        grid.innerHTML = "";
+        if (grid) grid.innerHTML = "";
 
         data.forEach(admin => {
-
             admins[admin._id] = admin;
 
-            grid.innerHTML += `
-<div class="community-card">
-
-    <div class="card-strip"></div>
-
-    <div class="avatar green">
-        ${admin.name.charAt(0).toUpperCase()}
-        <span class="status"></span>
-    </div>
-
-    <h3 class="member-title">${admin.name}</h3>
-
-    <div class="designation">${admin.role}</div>
-
-    <div class="info">
-        <p><span>☎</span> ${admin.phone || "Not Available"}</p>
-        <p><span>✉</span> ${admin.email || "Not Available"}</p>
-        <p><span>📅</span> ${admin.joining || admin.dateOfJoining || "Not Available"}</p>
-    </div>
-
-    <button
-        class="profile-btn"
-        data-id="${admin._id}"
-        data-type="admin">
-        View Profile >
-    </button>
-
-</div>
-`;
-
+            if (grid) {
+                grid.innerHTML += `
+                    <div class="community-card">
+                        <div class="card-strip"></div>
+                        <div class="avatar green">
+                            ${admin.name.charAt(0).toUpperCase()}
+                            <span class="status"></span>
+                        </div>
+                        <h3 class="member-title">${admin.name}</h3>
+                        <div class="designation">${admin.role}</div>
+                        <div class="info">
+                            <p><span>☎</span> ${admin.phone || "Not Available"}</p>
+                            <p><span>✉</span> ${admin.email || "Not Available"}</p>
+                            <p><span>📅</span> ${admin.joining || admin.dateOfJoining || "Not Available"}</p>
+                        </div>
+                        <button class="profile-btn" data-id="${admin._id}" data-type="admin">View Profile ></button>
+                    </div>
+                `;
+            }
         });
 
         attachProfileEvents();
-
     } catch (err) {
-
         console.error(err);
-
     }
-
 }
 
 const overlay = document.getElementById("popupOverlay");

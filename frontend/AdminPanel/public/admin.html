@@ -143,22 +143,27 @@
             </div>
 
             <div class="data-table-wrap" style="margin-bottom:26px;">
-
+                <div class="subtable-label">
+                    <span style="font-weight:700;color:var(--color-primary-dark);">Executive / Board Members</span>
+                </div>
                 <table>
+                    <thead>
+                        <tr><th></th><th>Name & Role</th><th>Phone</th><th>Email</th><th>Joined</th><th>Actions</th></tr>
+                    </thead>
                     <tbody id="execMembersBody"></tbody>
                 </table>
             </div>
 
             <div class="data-table-wrap">
                 <div class="subtable-label">
-                    <span id="generalMemberCount">General members (242)</span>
-                    <input type="text" class="table-search" placeholder="Search…" id="memberSearch">
+                    <span id="generalMemberCount" style="font-weight:700;color:var(--color-primary-dark);">General Members</span>
+                    <input type="text" class="table-search" placeholder="Search general members…" id="memberSearch">
                 </div>
                 <table>
+                    <thead>
+                        <tr><th>Name</th><th>Phone</th><th>Joined</th><th>Actions</th></tr>
+                    </thead>
                     <tbody id="generalMembersBody"></tbody>
-                    <tfoot>
-                        <tr class="show-more-row"><td colspan="4">… 240 more</td></tr>
-                    </tfoot>
                 </table>
             </div>
         </section>

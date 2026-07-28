@@ -31,6 +31,11 @@ const memberSchema = new mongoose.Schema({
     photo: {
         type: String,
         default: ""
+    },
+    memberType: {
+        type: String,
+        enum: ["EXECUTIVE", "GENERAL"],
+        default: "EXECUTIVE"
     }
 });
 

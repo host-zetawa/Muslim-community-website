@@ -46,6 +46,13 @@ function normalizeMemberPayload(body = {}) {
         payload.joining = payload.dateOfJoining;
     }
 
+    if (!payload.memberType && payload.type) {
+        payload.memberType = payload.type;
+    }
+    if (!payload.memberType) {
+        payload.memberType = "EXECUTIVE";
+    }
+
     return payload;
 }
 
@@ -446,7 +453,6 @@ app.get("/api/admin", async (req, res) => {
 //update admin
 app.put("/api/admin/:id", async (req, res) => {
     try {
-
         const updateData = {
             name: req.body.name,
             email: req.body.email,
@@ -455,10 +461,8 @@ app.put("/api/admin/:id", async (req, res) => {
         };
 
         if (req.body.password) {
-
             const salt = await bcrypt.genSalt(10);
             updateData.password = await bcrypt.hash(req.body.password, salt);
-
         }
 
         const admin = await Admin.findByIdAndUpdate(
@@ -476,29 +480,20 @@ app.put("/api/admin/:id", async (req, res) => {
 
 //delete admin
 app.delete("/api/admin/:id", async (req, res) => {
-
     try {
-
         await Admin.findByIdAndDelete(req.params.id);
-
         res.json({
             message: "Admin deleted"
         });
-
     } catch (err) {
-
         res.status(500).json({
             message: err.message
         });
-
     }
-
 });
 
 app.post("/api/admin", async (req, res) => {
-
     try {
-
         const { name, email, password, phone, role } = req.body;
 
         const existingAdmin = await Admin.findOne({ email });
@@ -526,17 +521,15 @@ app.post("/api/admin", async (req, res) => {
             _id: admin._id,
             name: admin.name,
             email: admin.email,
+            phone: admin.phone,
             role: admin.role
         });
 
     } catch (err) {
-
         res.status(500).json({
             message: err.message
         });
-
     }
-
 });
 
 // --- Settings Routes (Donation Details) ---

@@ -295,43 +295,50 @@ function renderExecMembers() {
 }
 function renderGeneralMembers(filter = '') {
     const filtered = generalMembers.filter(m =>
-        m.name.toLowerCase().includes(filter.toLowerCase())
+        (m.fullName || m.name || '').toLowerCase().includes(filter.toLowerCase())
     );
-    document.getElementById('generalMembersBody').innerHTML = filtered.map(m => `
-        <tr data-id="${m.id}">
+    document.getElementById('generalMembersBody').innerHTML = filtered.map(m => {
+        const id = m._id || m.id;
+        const name = m.fullName || m.name || 'Member';
+        const joining = m.dateOfJoining || m.joining;
+        return `
+        <tr data-id="${id}">
             <td class="cell-title">
-    <div class="member-info">
-        <img
-            src="${m.photo || 'assets/default-avatar.png'}"
-            class="member-avatar">
-
-        <span>${m.name}</span>
-    </div>
-</td>
-            <td>${m.phone}</td>
-            <td>${formatSince(m.joining)}</td>
+                <div class="member-info">
+                    <img src="${m.photo && m.photo.trim() ? m.photo : 'assets/default-avatar.png'}" class="member-avatar">
+                    <span>${name}</span>
+                </div>
+            </td>
+            <td>${m.phone || '—'}</td>
+            <td>${formatSince(joining)}</td>
             <td class="row-actions">
                 <button class="btn btn-outline btn-sm edit-general">Edit</button>
                 <button class="btn btn-danger-outline btn-sm delete-general">Delete</button>
             </td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
     document.getElementById('generalMemberCount').textContent = `General members (${generalMembers.length})`;
 
     document.querySelectorAll('.edit-general').forEach(btn => {
         btn.addEventListener('click', e => {
-            const id = Number(e.target.closest('tr').dataset.id);
-            openMemberModal(generalMembers.find(m => m.id === id), 'general');
+            const id = e.target.closest('tr').dataset.id;
+            const member = generalMembers.find(m => (m._id === id || String(m.id) === String(id)));
+            openMemberModal(member, 'general');
         });
     });
 
     document.querySelectorAll('.delete-general').forEach(btn => {
         btn.addEventListener('click', e => {
-            const id = Number(e.target.closest('tr').dataset.id);
-            const member = generalMembers.find(m => m.id === id);
-            confirmAction(`Remove ${member ? member.name : 'this member'}?`, () => {
-                generalMembers = generalMembers.filter(m => m.id !== id);
-                renderGeneralMembers(document.getElementById('memberSearch').value);
-                showToast('Member removed');
+            const id = e.target.closest('tr').dataset.id;
+            const member = generalMembers.find(m => (m._id === id || String(m.id) === String(id)));
+            confirmAction(`Remove ${member ? (member.fullName || member.name) : 'this member'}?`, async () => {
+                try {
+                    await fetch(`${MEMBER_API}/${id}`, { method: "DELETE" });
+                    showToast('Member removed');
+                    await fetchMembers();
+                } catch(err) {
+                    console.error(err);
+                }
             });
         });
     });
@@ -401,11 +408,8 @@ function fileTypeIcon(fileName) {
 }
 
 function renderAlbums() {
-
     const cards = albums.map(album => `
-
         <div class="album-card" data-id="${album._id}">
-
             <div class="album-thumb">
                 ${
                     album.coverImage
@@ -415,7 +419,6 @@ function renderAlbums() {
             </div>
 
             <div class="album-body">
-
                 <div class="album-title">
                     ${album.title}
                 </div>
@@ -425,7 +428,6 @@ function renderAlbums() {
                 </div>
 
                 <div class="album-actions">
-
                     <button class="btn btn-outline btn-sm manage-album">
                         Manage
                     </button>
@@ -434,61 +436,57 @@ function renderAlbums() {
                         + Upload
                     </button>
 
+                    <button class="btn btn-danger-outline btn-sm delete-album">
+                        Delete
+                    </button>
                 </div>
-
             </div>
-
         </div>
-
     `).join("");
-
-
 
     document.getElementById("galleryGrid").innerHTML =
         cards +
         `<div class="album-card-create" id="createAlbumCard">+ Create album</div>`;
 
-
     document
         .getElementById("createAlbumCard")
         .addEventListener("click", () => openAlbumModal());
 
-
-
     document.querySelectorAll(".manage-album").forEach(btn => {
-
         btn.addEventListener("click", e => {
-
             const id = e.target.closest(".album-card").dataset.id;
-
             const album = albums.find(a => a._id === id);
-
             openManageAlbumModal(album);
-
         });
-
     });
-
-
 
     document.querySelectorAll(".upload-album").forEach(btn => {
-
         btn.addEventListener("click", e => {
-
             const id = e.target.closest(".album-card").dataset.id;
-
             const album = albums.find(a => a._id === id);
-
             openUploadToAlbumModal(album);
-
         });
-
     });
 
+    document.querySelectorAll(".delete-album").forEach(btn => {
+        btn.addEventListener("click", e => {
+            const id = e.target.closest(".album-card").dataset.id;
+            const album = albums.find(a => a._id === id);
+            confirmAction(`Delete whole album "${album ? album.title : ''}"?`, async () => {
+                try {
+                    await fetch(`${GALLERY_API}/${id}`, { method: "DELETE" });
+                    showToast("Album deleted");
+                    await fetchGallery();
+                } catch (err) {
+                    console.error(err);
+                    showToast("Failed to delete album");
+                }
+            });
+        });
+    });
 }
 
 function renderAdminUsers() {
-
     document.getElementById("adminUsersList").innerHTML = adminUsers.map(u => `
         <div class="settings-row" data-id="${u._id}">
             <div class="settings-row-inline">
@@ -510,30 +508,27 @@ function renderAdminUsers() {
         </div>
     `).join("");
 
-    document.querySelectorAll(".remove-user").forEach(btn => {
-
+    document.querySelectorAll(".edit-admin").forEach(btn => {
         btn.addEventListener("click", e => {
-
             const id = e.target.closest(".settings-row").dataset.id;
-
             const user = adminUsers.find(u => u._id === id);
+            openAdminUserModal(user);
+        });
+    });
 
-            confirmAction(`Remove ${user.name}?`, async () => {
-
+    document.querySelectorAll(".remove-user").forEach(btn => {
+        btn.addEventListener("click", e => {
+            const id = e.target.closest(".settings-row").dataset.id;
+            const user = adminUsers.find(u => u._id === id);
+            confirmAction(`Remove ${user ? user.name : 'this user'}?`, async () => {
                 await fetch(`${ADMIN_API}/${id}`, {
                     method: "DELETE"
                 });
-
                 await fetchAdmins();
-
                 showToast("User removed");
-
             });
-
         });
-
     });
-
 }
 
 /* ---------- Modal engine ---------- */
@@ -696,160 +691,85 @@ document.getElementById('addProjectBtn').addEventListener('click', () => openPro
 
 /* Add / edit member (exec or general) */
 function openMemberModal(existing, kind) {
-
     const isEdit = !!existing;
     const todayIso = new Date().toISOString().slice(0, 10);
+    const defaultCategory = existing
+        ? (existing.memberType || 'EXECUTIVE')
+        : (kind === 'general' ? 'GENERAL' : 'EXECUTIVE');
 
     openModal(
         isEdit ? "Edit member" : "Add member",
-
         `
+        <div class="form-group">
+            <label>Member Category / Type</label>
+            <select class="form-input" id="m_memberType">
+                <option value="EXECUTIVE" ${defaultCategory === 'EXECUTIVE' ? 'selected' : ''}>Executive Member</option>
+                <option value="GENERAL" ${defaultCategory === 'GENERAL' ? 'selected' : ''}>General Member</option>
+            </select>
+        </div>
         ${fieldHtml("Full name", "m_name", existing ? (existing.fullName || existing.name || "") : "")}
         <div class="form-group">
-    <label>Profile Picture</label>
-    <input
-        type="file"
-        id="m_photo"
-        class="form-input"
-        accept="image/*">
-</div>
-        ${fieldHtml("Role (leave blank for general member)", "m_role", existing && existing.role ? existing.role : "")}
+            <label>Profile Picture</label>
+            <input type="file" id="m_photo" class="form-input" accept="image/*">
+        </div>
+        ${fieldHtml("Role / Designation", "m_role", existing && existing.role ? existing.role : "")}
         ${fieldHtml("Phone", "m_phone", existing ? existing.phone : "")}
-        ${kind !== "general" ? fieldHtml("Email", "m_email", existing ? existing.email : "") : ""}
+        ${fieldHtml("Email", "m_email", existing ? (existing.email || "") : "")}
         ${fieldHtml("Date of joining", "m_joining", existing && (existing.dateOfJoining || existing.joining) ? (existing.dateOfJoining || existing.joining).toString().slice(0,10) : todayIso, "date")}
         `,
-
         async () => {
-
+            const memberType = document.getElementById("m_memberType").value;
             const name = document.getElementById("m_name").value.trim() || "Unnamed member";
-            const role = document.getElementById("m_role").value.trim();
+            let role = document.getElementById("m_role").value.trim();
+            if (!role) {
+                role = memberType === "GENERAL" ? "General Member" : "Executive Member";
+            }
             const phone = document.getElementById("m_phone").value.trim() || "—";
             const joining = document.getElementById("m_joining").value || todayIso;
+            const email = document.getElementById("m_email").value.trim() || "—";
             const photoInput = document.getElementById("m_photo");
 
             let photo = existing?.photo || "";
-
-            if (photoInput.files.length) {
+            if (photoInput && photoInput.files.length) {
                 photo = await fileToDataUrl(photoInput.files[0]);
             }
-            const emailField = document.getElementById("m_email");
 
-            const email = emailField
-                ? emailField.value.trim() || "—"
-                : existing
-                    ? existing.email
-                    : "—";
+            const payload = {
+                fullName: name,
+                name: name,
+                role,
+                phone,
+                email,
+                dateOfJoining: joining,
+                joining,
+                photo,
+                memberType
+            };
 
-
-
-            // ===========================
-            // EXECUTIVE MEMBERS (DATABASE)
-            // ===========================
-
-            if (kind === "exec" || role) {
-
-                try {
-
-                    if (isEdit) {
-
-                        await fetch(`${MEMBER_API}/${existing._id}`, {
-
-                            method: "PUT",
-
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
-
-                            body: JSON.stringify({
-                                fullName: name,
-                                role,
-                                phone,
-                                email,
-                                dateOfJoining: joining,
-                                photo
-                            })
-
-                        });
-
-                        showToast("Member updated");
-
-                    } else {
-
-                        await fetch(MEMBER_API, {
-
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
-
-                            body: JSON.stringify({
-                                fullName: name,
-                                role,
-                                phone,
-                                email,
-                                dateOfJoining: joining,
-                                photo
-                            })
-
-                        });
-
-                        showToast("Member added");
-
-                    }
-
-                    fetchMembers();
-
-                }
-                catch (err) {
-
-                    console.error(err);
-
-                }
-
-            }
-
-            // ===========================
-            // GENERAL MEMBERS (LOCAL)
-            // ===========================
-
-            else {
-
-                if (isEdit) {
-
-                    Object.assign(existing, {
-                        name,
-                        phone,
-                        joining,
-                        photo
+            try {
+                const targetId = existing ? (existing._id || existing.id) : null;
+                if (isEdit && targetId) {
+                    await fetch(`${MEMBER_API}/${targetId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
                     });
-
-                    renderGeneralMembers(document.getElementById("memberSearch").value);
-
                     showToast("Member updated");
-
                 } else {
-
-                    generalMembers.push({
-                        id: uid(generalMembers),
-                        name,
-                        phone,
-                        joining,
-                        photo
+                    await fetch(MEMBER_API, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
                     });
-
-                    renderGeneralMembers();
-
                     showToast("Member added");
-
                 }
-
+                await fetchMembers();
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to save member");
             }
-
         }
-
     );
-
 }
 
 document.getElementById("addMemberBtn").addEventListener("click", () => openMemberModal(null, "new"));
@@ -1083,17 +1003,15 @@ function openManageAlbumModal(album) {
         ${fieldHtml("Album name", "am_name", album.title)}
 
         <div class="form-group">
-
             <label>Files (${album.photos.length})</label>
-
             <div class="file-list" id="am_fileList">
-
                 ${listHtml}
-
             </div>
-
         </div>
 
+        <div style="margin-top:20px;padding-top:14px;border-top:1px solid #eee;display:flex;justify-content:flex-end;">
+            <button type="button" class="btn btn-danger-outline btn-sm" id="deleteWholeAlbumModalBtn">Delete Whole Album</button>
+        </div>
     `,
 
     async () => {
@@ -1137,9 +1055,7 @@ function openManageAlbumModal(album) {
 
 
     document.querySelectorAll(".remove-file").forEach(btn => {
-
         btn.addEventListener("click", async e => {
-
             const idx = Number(
                 e.target.closest(".file-list-item").dataset.index
             );
@@ -1147,43 +1063,43 @@ function openManageAlbumModal(album) {
             album.photos.splice(idx, 1);
 
             try {
-
                 await fetch(`${GALLERY_API}/${album._id}`, {
-
                     method: "PUT",
-
                     headers: {
                         "Content-Type": "application/json"
                     },
-
                     body: JSON.stringify({
-
                         title: album.title,
-
                         coverImage: album.coverImage,
-
                         photos: album.photos
-
                     })
-
                 });
 
                 openManageAlbumModal(album);
-
                 await fetchGallery();
-
             }
-
             catch (err) {
-
                 console.error(err);
-
             }
-
         });
-
     });
 
+    const deleteBtn = document.getElementById("deleteWholeAlbumModalBtn");
+    if (deleteBtn) {
+        deleteBtn.addEventListener("click", () => {
+            confirmAction(`Delete whole album "${album.title}"?`, async () => {
+                try {
+                    await fetch(`${GALLERY_API}/${album._id}`, { method: "DELETE" });
+                    closeModal();
+                    showToast("Album deleted");
+                    await fetchGallery();
+                } catch (err) {
+                    console.error(err);
+                    showToast("Failed to delete album");
+                }
+            });
+        });
+    }
 }
 
 /* Upload more files into an existing album */
@@ -1266,72 +1182,74 @@ function openUploadToAlbumModal(album) {
 
 }
 
-/* Add admin user */
-document.getElementById("addUserBtn").addEventListener("click", () => {
+/* Add / edit admin user */
+function openAdminUserModal(existing) {
+    const isEdit = !!existing;
 
-    openModal("Add admin user", `
-
-        ${fieldHtml("Full name", "u_name")}
-
-        ${fieldHtml("Email", "u_email")}
-
-        ${fieldHtml("Phone", "u_phone")}
-
-        ${fieldHtml("Password", "u_password", "", "password")}
-
+    openModal(
+        isEdit ? "Edit admin user" : "Add admin user",
+        `
+        ${fieldHtml("Full name", "a_name", existing ? existing.name : "")}
+        ${fieldHtml("Email", "a_email", existing ? existing.email : "")}
+        ${fieldHtml("Phone", "a_phone", existing ? (existing.phone || "") : "")}
+        ${fieldHtml(isEdit ? "Password (leave blank to keep current)" : "Password", "a_password", "", "password")}
         <div class="form-group">
             <label>Role</label>
-            <select class="form-input" id="u_role">
-                <option>ADMIN</option>
-                <option>SUPER ADMIN</option>
+            <select class="form-input" id="a_role">
+                <option value="ADMIN" ${existing && existing.role === "ADMIN" ? "selected" : ""}>ADMIN</option>
+                <option value="SUPER ADMIN" ${existing && existing.role === "SUPER ADMIN" ? "selected" : ""}>SUPER ADMIN</option>
             </select>
         </div>
+        `,
+        async () => {
+            const name = document.getElementById("a_name").value.trim();
+            const email = document.getElementById("a_email").value.trim();
+            const phone = document.getElementById("a_phone").value.trim();
+            const password = document.getElementById("a_password").value;
+            const role = document.getElementById("a_role").value;
 
-    `, async () => {
-
-        const name = document.getElementById("u_name").value.trim();
-        const email = document.getElementById("u_email").value.trim();
-        const phone = document.getElementById("u_phone").value.trim();
-        const password = document.getElementById("u_password").value;
-        const role = document.getElementById("u_role").value;
-
-        try {
-
-            const res = await fetch(`${ADMIN_API}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    name,
-                    email,
-                    phone,
-                    password,
-                    role
-                })
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                showToast(data.message);
-                return;
+            if (!name || !email) {
+                alert("Name and email are required.");
+                return false;
+            }
+            if (!isEdit && !password) {
+                alert("Password is required for new admin.");
+                return false;
             }
 
-            await fetchAdmins();
+            const payload = { name, email, phone, role };
+            if (password) payload.password = password;
 
-            showToast("User added");
+            try {
+                const targetUrl = isEdit ? `${ADMIN_API}/${existing._id}` : ADMIN_API;
+                const method = isEdit ? "PUT" : "POST";
 
-        } catch (err) {
+                const res = await fetch(targetUrl, {
+                    method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
 
-            console.error(err);
-            showToast("Failed to add user");
+                const data = await res.json();
+                if (!res.ok) {
+                    showToast(data.message || "Failed to save user");
+                    return false;
+                }
 
+                await fetchAdmins();
+                showToast(isEdit ? "User updated" : "User added");
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to save user");
+                return false;
+            }
         }
+    );
+}
 
-    });
-
-});
+if (document.getElementById("addUserBtn")) {
+    document.getElementById("addUserBtn").addEventListener("click", () => openAdminUserModal(null));
+}
 
 /* ---------- Donation details: data + summary card + edit popup ---------- */
 let pendingQrUrl = ''; // set while the popup is open, committed to donationDetails on Save
@@ -1501,17 +1419,16 @@ async function fetchProjects() {
 
 async function fetchMembers() {
     try {
-
         const response = await fetch(MEMBER_API);
-
-        execMembers = await response.json();
-
+        if (!response.ok) throw new Error("Failed to fetch members");
+        const allMembers = await response.json();
+        execMembers = allMembers.filter(m => (m.memberType || 'EXECUTIVE').toUpperCase() === 'EXECUTIVE');
+        generalMembers = allMembers.filter(m => (m.memberType || '').toUpperCase() === 'GENERAL');
         renderExecMembers();
-
+        const searchInput = document.getElementById('memberSearch');
+        renderGeneralMembers(searchInput ? searchInput.value : '');
     } catch (err) {
-
         console.error(err);
-
     }
 }
 
