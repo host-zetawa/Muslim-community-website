@@ -137,7 +137,7 @@ async function fetchAdmins() {
     <div class="card-strip"></div>
 
     <div class="avatar green">
-        ${admin.name.charAt(0).toUpperCase()}
+        ${admin.photo ? `<img src="${admin.photo}" alt="${admin.name}" class="member-photo">` : admin.name.charAt(0).toUpperCase()}
         <span class="status"></span>
     </div>
 
@@ -209,6 +209,12 @@ function attachProfileEvents() {
 
             const displayName = person.fullName || person.name || "Member";
             initials.textContent = displayName.split(" ").map(x => x[0]).join("").substring(0,2);
+
+            if (person.photo) {
+                avatar.innerHTML = `<img src="${person.photo}" alt="${displayName}" class="popup-avatar-image">`;
+            } else {
+                avatar.innerHTML = `<span id="popupInitials">${initials.textContent}</span>`;
+            }
 
             nameText.textContent = displayName;
 

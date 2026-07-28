@@ -1277,6 +1277,11 @@ document.getElementById("addUserBtn").addEventListener("click", () => {
 
         ${fieldHtml("Phone", "u_phone")}
 
+        <div class="form-group">
+            <label>Profile Picture</label>
+            <input type="file" class="form-input" id="u_photo" accept="image/*">
+        </div>
+
         ${fieldHtml("Password", "u_password", "", "password")}
 
         <div class="form-group">
@@ -1294,6 +1299,19 @@ document.getElementById("addUserBtn").addEventListener("click", () => {
         const phone = document.getElementById("u_phone").value.trim();
         const password = document.getElementById("u_password").value;
         const role = document.getElementById("u_role").value;
+        const photoInput = document.getElementById("u_photo");
+
+        let photo = "";
+
+        if (photoInput && photoInput.files && photoInput.files.length) {
+            const file = photoInput.files[0];
+            photo = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+        }
 
         try {
 
@@ -1306,6 +1324,7 @@ document.getElementById("addUserBtn").addEventListener("click", () => {
                     name,
                     email,
                     phone,
+                    photo,
                     password,
                     role
                 })
