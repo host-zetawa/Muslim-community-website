@@ -51,12 +51,9 @@ async function fetchMembers() {
         if (!response.ok) throw new Error("Failed to fetch members");
         const data = await response.json();
 
-        const adminGrid = document.getElementById("admin-grid");
+        members = {};
         const membersGrid = document.getElementById("members-grid");
-
         if (membersGrid) membersGrid.innerHTML = "";
-
-        let generalCount = 0;
 
         data.forEach(member => {
             members[member._id] = member;
@@ -80,16 +77,11 @@ async function fetchMembers() {
                 </div>
             `;
 
-            if (isGeneral) {
-                generalCount++;
-                if (membersGrid) membersGrid.innerHTML += cardHtml;
-            } else {
-                if (adminGrid) adminGrid.innerHTML += cardHtml;
-            }
+            if (membersGrid) membersGrid.innerHTML += cardHtml;
         });
 
-        if (membersGrid && generalCount === 0) {
-            membersGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">No general community members listed.</div>';
+        if (membersGrid && data.length === 0) {
+            membersGrid.innerHTML = '<div style="text-align:center;padding:20px;color:#666;grid-column:1/-1;">No community members listed.</div>';
         }
 
         attachProfileEvents();
