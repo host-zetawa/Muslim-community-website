@@ -73,13 +73,13 @@ async function fetchMembers() {
     <div class="avatar">
         <img
             src="${member.photo || "assets/default-avatar.png"}"
-            alt="${member.fullName}"
+            alt="${member.fullName || member.name || "Member"}"
             class="member-photo"
         >
         <span class="status"></span>
     </div>
 
-    <h3 class="member-title">${member.fullName}</h3>
+    <h3 class="member-title">${member.fullName || member.name || "Member"}</h3>
 
     <div class="designation">${member.role}</div>
 
@@ -207,11 +207,10 @@ function attachProfileEvents() {
 
             if (!person) return;
 
-            initials.textContent = person.name
-                ? person.name.split(" ").map(x => x[0]).join("").substring(0,2)
-                : person.fullName.split(" ").map(x => x[0]).join("").substring(0,2);
+            const displayName = person.fullName || person.name || "Member";
+            initials.textContent = displayName.split(" ").map(x => x[0]).join("").substring(0,2);
 
-            nameText.textContent = person.name || person.fullName;
+            nameText.textContent = displayName;
 
             message.textContent = "";
 

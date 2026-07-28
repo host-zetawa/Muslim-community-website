@@ -27,6 +27,27 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 const PORT = 3000;
 
+function normalizeMemberPayload(body = {}) {
+    const payload = { ...body };
+
+    if (!payload.fullName && payload.name) {
+        payload.fullName = payload.name;
+    }
+
+    if (!payload.dateOfJoining && payload.joining) {
+        payload.dateOfJoining = payload.joining;
+    }
+
+    if (!payload.name && payload.fullName) {
+        payload.name = payload.fullName;
+    }
+
+    if (!payload.joining && payload.dateOfJoining) {
+        payload.joining = payload.dateOfJoining;
+    }
+
+    return payload;
+}
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -258,9 +279,10 @@ app.get("/api/members", async (req, res) => {
 app.post("/api/members", async (req, res) => {
     try {
 
-        console.log(req.body);
+        const memberData = normalizeMemberPayload(req.body);
+        console.log(memberData);
 
-        const member = new Member(req.body);
+        const member = new Member(memberData);
 
         await member.save();
 
@@ -283,8 +305,8 @@ app.put("/api/members/:id", async (req, res) => {
     try {
         const updatedMember = await Member.findByIdAndUpdate(
             req.params.id,
-            req.body,
-            { new: true }
+            normalizeMemberPayload(req.body),
+            { new: true, runValidators: true }
         );
 
         res.json(updatedMember);

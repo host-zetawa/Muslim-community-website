@@ -90,6 +90,15 @@ function formatSince(dateStr) {
     return 'since ' + d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
 }
 
+function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+    });
+}
+
 /* ---------- Navigation ---------- */
 const navLinks = document.querySelectorAll('.sidebar-link');
 const views = document.querySelectorAll('.admin-view');
@@ -694,7 +703,7 @@ function openMemberModal(existing, kind) {
         isEdit ? "Edit member" : "Add member",
 
         `
-        ${fieldHtml("Full name", "m_name", existing ? existing.name : "")}
+        ${fieldHtml("Full name", "m_name", existing ? (existing.fullName || existing.name || "") : "")}
         <div class="form-group">
     <label>Profile Picture</label>
     <input
@@ -706,7 +715,7 @@ function openMemberModal(existing, kind) {
         ${fieldHtml("Role (leave blank for general member)", "m_role", existing && existing.role ? existing.role : "")}
         ${fieldHtml("Phone", "m_phone", existing ? existing.phone : "")}
         ${kind !== "general" ? fieldHtml("Email", "m_email", existing ? existing.email : "") : ""}
-        ${fieldHtml("Date of joining", "m_joining", existing && existing.joining ? existing.joining.slice(0,10) : todayIso, "date")}
+        ${fieldHtml("Date of joining", "m_joining", existing && (existing.dateOfJoining || existing.joining) ? (existing.dateOfJoining || existing.joining).toString().slice(0,10) : todayIso, "date")}
         `,
 
         async () => {
@@ -720,7 +729,7 @@ function openMemberModal(existing, kind) {
             let photo = existing?.photo || "";
 
             if (photoInput.files.length) {
-                photo = URL.createObjectURL(photoInput.files[0]);
+                photo = await fileToDataUrl(photoInput.files[0]);
             }
             const emailField = document.getElementById("m_email");
 
