@@ -167,6 +167,14 @@ const phone = document.getElementById("popupPhone");
 const email = document.getElementById("popupEmail");
 
 const date = document.getElementById("popupdate");
+
+function formatPopupDate(value) {
+    if (!value) return "Not Available";
+    const d = new Date(value);
+    if (isNaN(d)) return String(value);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 function attachProfileEvents() {
 
     document.querySelectorAll(".profile-btn").forEach(button => {
@@ -195,19 +203,31 @@ function attachProfileEvents() {
 
             message.textContent = "";
 
-            about.textContent = "";
+            about.textContent = person.about || person.bio || "No profile description available.";
 
             phone.textContent = person.phone || "—";
 
             email.textContent = person.email || "—";
 
-            date.textContent =
+            date.textContent = formatPopupDate(
                 person.joining ||
                 person.dateOfJoining ||
                 person.createdAt ||
-                "";
+                person.createdAt?.toString() ||
+                ""
+            );
 
             responsibilities.innerHTML = "";
+            const responsibilityList = Array.isArray(person.responsibilities)
+                ? person.responsibilities
+                : person.responsibilities
+                    ? String(person.responsibilities).split(',').map(item => item.trim()).filter(Boolean)
+                    : [];
+            if (responsibilityList.length === 0) {
+                responsibilities.innerHTML = '<span>No responsibilities assigned.</span>';
+            } else {
+                responsibilities.innerHTML = responsibilityList.map(item => `<span>${item}</span>`).join('');
+            }
 
             overlay.classList.add("active");
 
