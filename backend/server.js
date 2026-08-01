@@ -82,11 +82,6 @@ mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("Connected to Atlas"))
 .catch(err => console.log(err));
 
-mongoose.connection.once("open", () => {
-    console.log("Connected to database:", mongoose.connection.db.databaseName);
-    console.log("Host:", mongoose.connection.host);
-  });
-
 // Home Route
 app.get("/", (req, res) => {
     res.send("MongoDB Connected Successfully.");
@@ -318,7 +313,9 @@ app.delete("/api/projects/:id", async (req, res) => {
 app.get("/api/members", async (req, res) => {
     try {
         const members = await Member.find();
+        console.log("Members from DB:", members);
         res.json(members);
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
