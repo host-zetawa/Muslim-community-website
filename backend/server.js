@@ -19,7 +19,6 @@ const Donation = require("./models/donation");
 const Settings = require("./models/Settings");
 
 const JWT_SECRET = process.env.JWT_SECRET || "muslim_community_super_secret_key_2026";
-console.log(JWT_SECRET);
 
 const app = express();
 app.use(cors());
