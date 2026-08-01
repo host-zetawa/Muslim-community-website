@@ -24,7 +24,6 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-const PORT = 3000;
 
 function normalizeMemberPayload(body = {}) {
     const payload = { ...body };
@@ -81,6 +80,11 @@ app.use(express.urlencoded({ extended: true }));
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("Connected to Atlas"))
 .catch(err => console.log(err));
+
+mongoose.connection.once("open", () => {
+    console.log("Connected to database:", mongoose.connection.db.databaseName);
+    console.log("Host:", mongoose.connection.host);
+  });
 
 // Home Route
 app.get("/", (req, res) => {
