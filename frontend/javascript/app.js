@@ -336,9 +336,27 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="notification-title">${n.title}</div>
                             <div class="notification-desc">${n.description || n.type || ''}</div>
                             <div class="notification-date">${n.publishedDate || ''}</div>
-                            ${n.attachment ? `<a href="${n.attachment}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-top: 8px; font-size: 0.9rem; color: var(--color-primary);">Open attachment</a>` : ''}
+                            ${n.attachment ? `
+                                <button class="open-attachment" data-id="${n._id}">
+                                    ${n.attachmentName || "View Attachment"}
+                                </button>
+                                ` : ""}
                         </div>
                     `).join('');
+
+                    document.querySelectorAll(".open-attachment").forEach(btn => {
+
+                        btn.addEventListener("click", () => {
+                    
+                            const notice = notices.find(
+                                n => n._id === btn.dataset.id
+                            );
+                    
+                            openAttachment(notice.attachment, notice.attachmentName);
+                    
+                        });
+                    
+                    });
                 }
             }
 
@@ -351,8 +369,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 let noticesHtml = notices.map(notice => {
                     const attachmentHtml = notice.attachment
-                        ? `<a href="${notice.attachment}" target="_blank" rel="noopener noreferrer" style="color: #fff; text-decoration: underline; margin-left: 8px;">View attachment</a>`
-                        : '';
+    ? `
+    <button
+        class="notice-attachment-btn open-attachment"
+        data-id="${notice._id}">
+      ${notice.attachmentName || "Attachment"}
+    </button>
+    `
+    : "";
                     return `<span style="margin-right: 50px;"><strong>${notice.title}:</strong> ${notice.description || ''} 
                     ${notice.publishedDate ? `(${notice.publishedDate})` : ''}${attachmentHtml}</span>`;
                 }).join('');
@@ -365,6 +389,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         </marquee>
                     </div>
                 `;
+                document.querySelectorAll(".open-attachment").forEach(btn => {
+
+                    btn.addEventListener("click", () => {
+                
+                        const notice = notices.find(
+                            n => n._id === btn.dataset.id
+                        );
+                
+                        openAttachment(notice.attachment, notice.attachmentName);
+                
+                    });
+                
+                });
                 noticesContainer.style.display = 'block';
             }
         } catch (error) {
@@ -372,6 +409,25 @@ document.addEventListener('DOMContentLoaded', () => {
             if (noticesContainer) noticesContainer.style.display = 'none';
         }
     };
+
+    function openAttachment(dataUrl, fileName = "") {
+
+        if (!dataUrl) return;
+    
+        fetch(dataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+    
+                const url = URL.createObjectURL(blob);
+    
+                window.open(url, "_blank");
+    
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+    
+            })
+            .catch(console.error);
+    
+    }
     
     fetchNotices();
 

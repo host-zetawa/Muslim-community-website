@@ -2057,3 +2057,35 @@ button {
     color: white;
 }
 
+.notice-attachment-btn{
+
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+
+    margin-left:12px;
+    padding:5px 12px;
+
+    border:1px solid rgba(255,255,255,.35);
+    border-radius:20px;
+
+    background:rgba(255,255,255,.12);
+    color:#fff;
+
+    font-size:.82rem;
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.notice-attachment-btn:hover{
+
+    background:#fff;
+    color:var(--color-primary);
+
+    border-color:#fff;
+
+}
