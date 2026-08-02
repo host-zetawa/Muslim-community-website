@@ -19,13 +19,12 @@ const Donation = require("./models/donation");
 const Settings = require("./models/Settings");
 
 const JWT_SECRET = process.env.JWT_SECRET || "muslim_community_super_secret_key_2026";
-console.log(JWT_SECRET);
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-const PORT = 3000;
+const PORT = 5000;
 
 function normalizeMemberPayload(body = {}) {
     const payload = { ...body };
@@ -314,7 +313,9 @@ app.delete("/api/projects/:id", async (req, res) => {
 app.get("/api/members", async (req, res) => {
     try {
         const members = await Member.find();
+        console.log("Members from DB:", members);
         res.json(members);
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
