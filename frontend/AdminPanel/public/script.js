@@ -354,10 +354,23 @@ function renderNotices() {
             <td class="cell-title">${n.title}</td>
             <td>${n.type}</td>
             <td>
-                ${n.attachment
-                    ? `<a href="${n.attachment}" target="_blank" class="attachment-link">${n.attachment}</a>`
-                    : `<span class="no-attachment">— none —</span>`}
-            </td>
+    ${
+        n.attachment
+            ? `<button
+                    class="attachment-link open-attachment"
+                    data-id="${n._id}">
+                    ${fileTypeIcon(n.attachmentName)}
+                    ${
+                        n.attachmentName
+                            ? n.attachmentName
+                            : n.attachment.startsWith("data:application/pdf")
+                                ? "Document"
+                                : "Image"
+                    }
+               </button>`
+            : `<span class="no-attachment">— none —</span>`
+    }
+</td>
             <td>${n.publishedDate}</td>
             <td class="row-actions">
                 <button class="btn btn-outline btn-sm edit-notice">Edit</button>
@@ -389,18 +402,50 @@ function renderNotices() {
             });
         });
     });
+
+    document.querySelectorAll(".open-attachment").forEach(btn => {
+
+        btn.addEventListener("click", () => {
+    
+            const notice = notices.find(n => n._id === btn.dataset.id);
+    
+            openAttachment(notice.attachment, notice.attachmentName);
+    
+        });
+    
+    });
 }
 
 /* Opens the uploaded file in a new tab. Real uploads (this session) have a
    live blob URL and open directly; seed/demo entries without a real file
    just get a friendly heads-up. */
-function openAttachment(notice) {
-    if (!notice || !notice.fileName) return;
-    if (notice.fileUrl) {
-        window.open(notice.fileUrl, '_blank');
-    } else {
-        showToast('This is placeholder demo data — upload a file via Edit to preview it');
+   function openAttachment(dataUrl, fileName = "") {
+
+    if (!dataUrl) {
+        showToast("No attachment found");
+        return;
     }
+
+    fetch(dataUrl)
+        .then(res => res.blob())
+        .then(blob => {
+
+            const url = URL.createObjectURL(blob);
+
+            window.open(url, "_blank");
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 60000);
+
+        })
+        .catch(err => {
+
+            console.error(err);
+            showToast("Unable to open attachment");
+
+        });
+
 }
 
 function fileTypeIcon(fileName) {
@@ -793,91 +838,134 @@ function openNoticeModal(existing) {
 
     const isEdit = !!existing;
 
-    openModal(isEdit ? "Edit notice" : "Publish notice", `
+    openModal(
+        isEdit ? "Edit Notice" : "Publish Notice",
+
+        `
         ${fieldHtml("Title", "n_title", existing ? existing.title : "")}
 
         <div class="form-group">
             <label>Type</label>
             <select class="form-input" id="n_type">
-                <option ${existing && existing.type === "Notice" ? "selected" : ""}>Notice</option>
-                <option ${existing && existing.type === "Event" ? "selected" : ""}>Event</option>
+                <option value="Notice" ${existing && existing.type === "Notice" ? "selected" : ""}>Notice</option>
+                <option value="Event" ${existing && existing.type === "Event" ? "selected" : ""}>Event</option>
             </select>
         </div>
 
         <div class="form-group">
             <label>Description</label>
-            <textarea class="form-input" id="n_description">${existing ? existing.description || "" : ""}</textarea>
+            <textarea
+                class="form-input"
+                id="n_description"
+                rows="4"
+            >${existing ? (existing.description || "") : ""}</textarea>
         </div>
 
         <div class="form-group">
-            <label>Attachment</label>
-            <input type="file" class="form-input" id="n_file" accept="image/*,.pdf">
+            <label>Attachment (PDF/Image)</label>
+            <input
+                type="file"
+                class="form-input"
+                id="n_file"
+                accept="image/*,.pdf">
         </div>
 
-    `, async () => {
+        ${existing && existing.attachmentName
+            ? `<p style="font-size:13px;color:#666;">
+                Current file: <strong>${existing.attachmentName}</strong>
+               </p>`
+            : ""}
+        `,
 
-        const title = document.getElementById("n_title").value.trim();
-        const type = document.getElementById("n_type").value;
-        const description = document.getElementById("n_description").value.trim();
+        async () => {
 
-        const fileInput = document.getElementById("n_file");
+            const title = document.getElementById("n_title").value.trim();
+            const type = document.getElementById("n_type").value;
+            const description = document.getElementById("n_description").value.trim();
 
-        let attachment = existing ? existing.attachment : "";
+            const fileInput = document.getElementById("n_file");
 
-        if (fileInput.files.length) {
-            attachment = fileInput.files[0].name;
-        }
+            let attachment = existing ? existing.attachment : "";
+            let attachmentName = existing ? (existing.attachmentName || "") : "";
 
-        const noticeData = {
-            title,
-            type,
-            description,
-            attachment,
-            publishedDate: existing
-                ? existing.publishedDate
-                : new Date().toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric"
-                })
-        };
+            if (fileInput.files.length) {
 
-        try {
+                attachment = await fileToDataUrl(fileInput.files[0]);
 
-            if (isEdit) {
-
-                await fetch(`${NOTICE_API}/${existing._id}`, {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(noticeData)
-                });
-
-                showToast("Notice updated");
-
-            } else {
-
-                await fetch(NOTICE_API, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(noticeData)
-                });
-
-                showToast("Notice published");
+                attachmentName = fileInput.files[0].name;
 
             }
 
-            await fetchNotices();
+            const noticeData = {
 
-        } catch (err) {
-            console.error(err);
-            showToast("Failed to save notice");
+                title,
+                type,
+                description,
+                attachment,
+                attachmentName,
+
+                publishedDate: existing
+                    ? existing.publishedDate
+                    : new Date().toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric"
+                    })
+
+            };
+
+            try {
+
+                let response;
+
+                if (isEdit) {
+
+                    response = await fetch(`${NOTICE_API}/${existing._id}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(noticeData)
+                    });
+
+                } else {
+
+                    response = await fetch(NOTICE_API, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(noticeData)
+                    });
+
+                }
+
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+
+                showToast(
+                    isEdit
+                        ? "Notice updated"
+                        : "Notice published"
+                );
+
+                await fetchNotices();
+
+            }
+            catch (err) {
+
+                console.error(err);
+
+                showToast("Failed to save notice");
+
+                return false;
+
+            }
+
         }
 
-    });
+    );
 
 }
 

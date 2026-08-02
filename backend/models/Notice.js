@@ -4,6 +4,7 @@ const noticeSchema = new mongoose.Schema({
     title: String,
     description: String,
     attachment: String,
+    attachmentName: String,
     type: String,
     publishedDate: String
 });

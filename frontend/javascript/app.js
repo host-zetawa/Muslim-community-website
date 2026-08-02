@@ -336,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="notification-title">${n.title}</div>
                             <div class="notification-desc">${n.description || n.type || ''}</div>
                             <div class="notification-date">${n.publishedDate || ''}</div>
+                            ${n.attachment ? `<a href="${n.attachment}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-top: 8px; font-size: 0.9rem; color: var(--color-primary);">Open attachment</a>` : ''}
                         </div>
                     `).join('');
                 }
@@ -349,8 +350,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 let noticesHtml = notices.map(notice => {
+                    const attachmentHtml = notice.attachment
+                        ? `<a href="${notice.attachment}" target="_blank" rel="noopener noreferrer" style="color: #fff; text-decoration: underline; margin-left: 8px;">View attachment</a>`
+                        : '';
                     return `<span style="margin-right: 50px;"><strong>${notice.title}:</strong> ${notice.description || ''} 
-                    ${notice.publishedDate ? `(${notice.publishedDate})` : ''}</span>`;
+                    ${notice.publishedDate ? `(${notice.publishedDate})` : ''}${attachmentHtml}</span>`;
                 }).join('');
                 
                 noticesContainer.innerHTML = `
